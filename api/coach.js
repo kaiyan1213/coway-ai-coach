@@ -41,18 +41,61 @@ function auth(req) {
   return verifyToken(token);
 }
 
-// ── 图书管理员：智能搜索知识库 ─────────────────────────────────────────────
-async function searchKnowledge(queryText, db) {
+// ── Step 1：用 Haiku 把问题/情境蒸馏成 2-3 个搜索关键词 ──────────────────────
+// 成本极低（~100 input + 20 output tokens），但大幅提升搜索准确率
+async function extractSearchTerms(text, anthropic) {
+  if (!text || !text.trim()) return [];
+  try {
+    const res = await anthropic.messages.create({
+      model: MODELS.qa,
+      max_tokens: 80,
+      messages: [{
+        role: 'user',
+        content: `从以下问题提取1-3个最关键的中文搜索词（用于搜索Coway产品知识库）。
+返回严格JSON：{"terms":["词1","词2"]}，只返回JSON。
+
+问题：${text.trim().slice(0, 200)}`,
+      }],
+    });
+    const parsed = JSON.parse(
+      res.content[0].text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
+    );
+    return Array.isArray(parsed.terms) ? parsed.terms.filter(Boolean) : [text];
+  } catch {
+    return [text]; // fallback：用原文搜索
+  }
+}
+
+// ── Step 2：图书管理员搜索（关键词提取 + 多词合并去重） ─────────────────────
+async function searchKnowledge(queryText, db, anthropic) {
   if (!queryText || !queryText.trim()) return [];
-  const { data, error } = await db.rpc('search_knowledge', {
+
+  // 先用原文搜，快速判断有没有精确命中
+  const { data: direct } = await db.rpc('search_knowledge', {
     query_text: queryText.trim(),
     max_results: KB_SEARCH_LIMIT,
   });
-  if (error) {
-    console.error('Knowledge search error:', error.message);
-    return [];
+
+  // 如果精确搜已有结果，直接用
+  if (direct && direct.length >= 2) return direct;
+
+  // 精确搜结果少 → 用 Haiku 提取关键词再搜
+  const terms = await extractSearchTerms(queryText, anthropic);
+  const seen = new Set((direct || []).map(i => `${i.category}|${i.topic}`));
+  const results = [...(direct || [])];
+
+  for (const term of terms) {
+    if (term === queryText.trim()) continue; // 避免重复搜同一词
+    const { data } = await db.rpc('search_knowledge', {
+      query_text: term,
+      max_results: 5,
+    });
+    for (const item of (data || [])) {
+      const key = `${item.category}|${item.topic}`;
+      if (!seen.has(key)) { seen.add(key); results.push(item); }
+    }
   }
-  return data || [];
+  return results.slice(0, KB_SEARCH_LIMIT);
 }
 
 // 把检索结果格式化成给 Claude 看的文字
@@ -117,7 +160,7 @@ module.exports = async (req, res) => {
 
     // 用备注 + 最近一条历史作为搜索上下文，找相关知识
     const searchQuery = [note, history?.[0]?.situation_summary].filter(Boolean).join(' ');
-    const knowledgeItems = await searchKnowledge(searchQuery, db);
+    const knowledgeItems = await searchKnowledge(searchQuery, db, anthropic);
     const knowledgeText  = formatKnowledge(knowledgeItems);
 
     // 组装图片 blocks
@@ -176,7 +219,7 @@ module.exports = async (req, res) => {
     }
 
     // 图书管理员搜索相关知识
-    const knowledgeItems = await searchKnowledge(question, db);
+    const knowledgeItems = await searchKnowledge(question, db, anthropic);
     const knowledgeText  = formatKnowledge(knowledgeItems);
 
     const userMessage = [
