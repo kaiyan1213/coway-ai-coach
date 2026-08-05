@@ -9,7 +9,7 @@
 // POST /api/knowledge?action=toggle      → 启用/停用一条知识 { id, is_active }
 
 // ─── CONFIG ───────────────────────────────────────────────────────────────────
-const ALLOWED_CATEGORIES = ['下单前_产品', '下单前_安装', '下单后_流程', '销售话术'];
+const ALLOWED_CATEGORIES = ['价格_Pricelist', 'Promotion_Memo', '产品知识', '话术FAQ', 'Flow内容', '下单后_流程', '销售话术', '下单前_产品', '下单前_安装'];
 // ─────────────────────────────────────────────────────────────────────────────
 
 const { createClient } = require('@supabase/supabase-js');
