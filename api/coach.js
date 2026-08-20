@@ -250,18 +250,14 @@ module.exports = async (req, res) => {
     const flowSearchTerm = (flow && FLOW_SEARCH[flow]) || '';
     const baseQuery = [note, historyItems[0]?.situation_summary].filter(Boolean).join(' ');
 
-    // 先搜 flow 脚本，再搜通用知识，合并去重
+    // flow 脚本 + 通用知识并行搜索（互不依赖，并行能省一轮网络往返），再合并去重
+    const [flowItems, generalItems] = await Promise.all([
+      flowSearchTerm ? searchKnowledge(flowSearchTerm, db, anthropic) : Promise.resolve([]),
+      searchKnowledge(baseQuery || '销售', db, anthropic),
+    ]);
     const seen = new Set();
     let knowledgeItems = [];
-    if (flowSearchTerm) {
-      const flowItems = await searchKnowledge(flowSearchTerm, db, anthropic);
-      for (const item of flowItems) {
-        const key = `${item.category}|${item.topic}`;
-        if (!seen.has(key)) { seen.add(key); knowledgeItems.push(item); }
-      }
-    }
-    const generalItems = await searchKnowledge(baseQuery || '销售', db, anthropic);
-    for (const item of generalItems) {
+    for (const item of [...flowItems, ...generalItems]) {
       const key = `${item.category}|${item.topic}`;
       if (!seen.has(key)) { seen.add(key); knowledgeItems.push(item); }
     }

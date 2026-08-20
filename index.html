@@ -597,9 +597,11 @@ async function init() {
     try {
       const sess = JSON.parse(saved);
       S.token = sess.token; S.staffName = sess.staffName;
-      await loadCustomers(); renderList();
       document.getElementById('list-staff-name').textContent = sess.staffName;
-      showView('list'); return;
+      document.getElementById('customer-list').innerHTML = '<div class="loading-dots" style="padding:60px 0"><span></span><span></span><span></span></div>';
+      showView('list');
+      await loadCustomers(); renderList();
+      return;
     } catch {
       localStorage.removeItem('coway_session');
       S.token = null; S.staffName = null;
@@ -678,7 +680,7 @@ function renderList() {
     return;
   }
   list.innerHTML = filtered.map((c, i) => `
-    <div class="customer-card" data-cid="${c.id}" style="animation-delay:${i*40}ms">
+    <div class="customer-card" data-cid="${c.id}" style="animation-delay:${Math.min(i,8)*25}ms">
       ${avatarHTML(c.label, 46)}
       <div class="customer-info">
         <div class="customer-label">${esc(c.label)}</div>
@@ -797,7 +799,7 @@ function renderHistory() {
   list.innerHTML = S.interactions.map((i, idx) => {
     const isQA = i.situation_summary?.startsWith('问：');
     return `
-    <div class="history-item" style="animation-delay:${idx*50}ms">
+    <div class="history-item" style="animation-delay:${Math.min(idx,6)*30}ms">
       <div class="history-time">${formatDate(i.created_at)}</div>
       <div class="history-bubble" style="${isQA?'border-left-color:#7C3AED':''}">
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
