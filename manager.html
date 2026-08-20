@@ -143,6 +143,7 @@
     <button class="dash-tab"        id="tab-resolved" onclick="switchTab('resolved')">已处理</button>
     <button class="dash-tab"        id="tab-account"  onclick="switchTab('account')">账号</button>
     <button class="dash-tab"        id="tab-products" onclick="switchTab('products')">产品</button>
+    <button class="dash-tab"        id="tab-promo"    onclick="switchTab('promo')">促销</button>
   </div>
 
   <div class="dash-body">
@@ -192,6 +193,22 @@
         <button class="btn-primary" onclick="addProduct()">新增</button>
       </div>
       <div class="product-grid" id="product-grid"></div>
+    </div>
+
+    <!-- Promotion tab -->
+    <div id="panel-promo" style="display:none">
+      <div class="form-card">
+        <div class="form-title">➕ 新增本月促销</div>
+        <div class="hint">AI Coach 回答顾客问题时会自动参考这里的内容，建议每个月更新，旧的可以删掉或留着当历史记录</div>
+        <div class="form-row">
+          <input id="new-promo-topic" class="form-input" placeholder="标题，例如：2026年8月促销">
+        </div>
+        <div class="form-row">
+          <textarea id="new-promo-content" class="form-input" rows="6" style="resize:vertical;font-family:inherit" placeholder="促销详情（价格、优惠、有效期等，越具体 AI 回答越准）"></textarea>
+        </div>
+        <button class="btn-primary" onclick="addPromo()">新增</button>
+      </div>
+      <div id="promo-list"></div>
     </div>
   </div>
 </div>
@@ -309,15 +326,17 @@ function mgrHeaders() {
 // ── Tab ───────────────────────────────────────────────────────
 function switchTab(tab) {
   currentTab = tab;
-  ['pending','resolved','account','products'].forEach(t =>
+  ['pending','resolved','account','products','promo'].forEach(t =>
     document.getElementById('tab-'+t).classList.toggle('active', t===tab));
   document.getElementById('panel-feedback').style.display = (tab==='pending'||tab==='resolved') ? '' : 'none';
   document.getElementById('panel-account').style.display  = tab==='account'  ? '' : 'none';
   document.getElementById('panel-products').style.display = tab==='products' ? '' : 'none';
+  document.getElementById('panel-promo').style.display    = tab==='promo'    ? '' : 'none';
 
   if (tab === 'pending' || tab === 'resolved') loadFeedback(tab);
   if (tab === 'account') loadStaff();
   if (tab === 'products') loadProducts();
+  if (tab === 'promo') loadPromos();
 }
 
 // ── Load feedback ─────────────────────────────────────────────
@@ -571,6 +590,83 @@ async function deleteProduct(id) {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     loadProducts();
+  } catch (e) { alert(e.message || '删除失败'); }
+}
+
+// ── Promotion management ────────────────────────────────────
+let promoCache = [];
+const PROMO_CATEGORY = '销售话术';
+const PROMO_PRODUCT  = 'Promotion';
+
+async function loadPromos() {
+  const el = document.getElementById('promo-list');
+  try {
+    const res = await fetch('/api/knowledge', { headers: mgrHeaders() });
+    const data = await res.json();
+    promoCache = (data.knowledge || []).filter(k => k.product === PROMO_PRODUCT);
+    renderPromos();
+  } catch {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div>加载失败，请刷新</div></div>`;
+  }
+}
+
+function renderPromos() {
+  const el = document.getElementById('promo-list');
+  if (!promoCache.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📢</div><div class="empty-title">还没有促销内容</div></div>`;
+    return;
+  }
+  el.innerHTML = promoCache.map(p => `
+    <div class="fb-card ${p.is_active?'':'resolved'}">
+      <div class="fb-meta">
+        <span class="fb-staff">${esc(p.topic)}</span>
+        <span class="fb-time">${fmtDate(p.updated_at)}</span>
+      </div>
+      <div class="fb-response" style="max-height:none">${esc(p.content)}</div>
+      <div class="staff-actions">
+        <button class="icon-btn" onclick="togglePromo('${p.id}', ${!p.is_active})">${p.is_active ? '⏸ 停用' : '▶ 启用'}</button>
+        <button class="icon-btn danger" onclick="deletePromo('${p.id}')">🗑️ 删除</button>
+      </div>
+    </div>`).join('');
+}
+
+async function addPromo() {
+  const topic = document.getElementById('new-promo-topic').value.trim();
+  const content = document.getElementById('new-promo-content').value.trim();
+  if (!topic || !content) { alert('请填写标题和内容'); return; }
+  try {
+    const res = await fetch('/api/knowledge?action=add', {
+      method: 'POST', headers: mgrHeaders(),
+      body: JSON.stringify({ category: PROMO_CATEGORY, product: PROMO_PRODUCT, topic, content }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('new-promo-topic').value = '';
+    document.getElementById('new-promo-content').value = '';
+    loadPromos();
+  } catch (e) { alert(e.message || '新增失败'); }
+}
+
+async function togglePromo(id, is_active) {
+  try {
+    const res = await fetch('/api/knowledge?action=toggle', {
+      method: 'POST', headers: mgrHeaders(), body: JSON.stringify({ id, is_active }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    loadPromos();
+  } catch (e) { alert(e.message || '操作失败'); }
+}
+
+async function deletePromo(id) {
+  if (!confirm('删除这条促销内容？')) return;
+  try {
+    const res = await fetch('/api/knowledge?action=delete', {
+      method: 'POST', headers: mgrHeaders(), body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    loadPromos();
   } catch (e) { alert(e.message || '删除失败'); }
 }
 

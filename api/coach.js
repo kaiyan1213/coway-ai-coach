@@ -136,6 +136,21 @@ async function searchKnowledge(queryText, db, anthropic) {
   return results.slice(0, KB_SEARCH_LIMIT);
 }
 
+// 命中的知识条目里第一个带 product 的，去产品图册配一张图
+async function findProductImage(knowledgeItems, db) {
+  const matchedProduct = knowledgeItems.find(k => k.product);
+  if (!matchedProduct) return { productImage: null, productName: null };
+  const { data: prod } = await db.from('products')
+    .select('name, image_url')
+    .eq('is_active', true)
+    .ilike('name', `%${matchedProduct.product}%`)
+    .limit(1)
+    .maybeSingle();
+  return prod
+    ? { productImage: prod.image_url, productName: prod.name }
+    : { productImage: null, productName: null };
+}
+
 // 把检索结果格式化成给 Claude 看的文字
 function formatKnowledge(items) {
   if (!items.length) return '';
@@ -300,18 +315,7 @@ module.exports = async (req, res) => {
       .update({ updated_at: new Date().toISOString() })
       .eq('id', customerId);
 
-    // 命中的知识条目里第一个带 product 的，去产品图册配一张图
-    let productImage = null, productName = null;
-    const matchedProduct = knowledgeItems.find(k => k.product);
-    if (matchedProduct) {
-      const { data: prod } = await db.from('products')
-        .select('name, image_url')
-        .eq('is_active', true)
-        .ilike('name', `%${matchedProduct.product}%`)
-        .limit(1)
-        .maybeSingle();
-      if (prod) { productImage = prod.image_url; productName = prod.name; }
-    }
+    const { productImage, productName } = await findProductImage(knowledgeItems, db);
 
     return res.status(200).json({
       suggestion:        parsed.suggestion,
@@ -383,7 +387,14 @@ module.exports = async (req, res) => {
         .eq('id', customerId);
     }
 
-    return res.status(200).json({ answer: parsed.answer, answered: parsed.answered });
+    const { productImage, productName } = await findProductImage(knowledgeItems, db);
+
+    return res.status(200).json({
+      answer: parsed.answer,
+      answered: parsed.answered,
+      product_image: productImage,
+      product_name: productName,
+    });
   }
 
   return res.status(400).json({ error: '未知模式' });
