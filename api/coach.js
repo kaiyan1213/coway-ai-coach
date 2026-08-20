@@ -350,6 +350,7 @@ module.exports = async (req, res) => {
         knowledgeText || '【知识库暂无相关记录，请如实告知不确定】',
         historyText ? `【该客户截图分析历史（供参考）】\n${historyText}` : '',
         `问题：${question.trim()}`,
+        '⚠️ 只回答上面这个新问题，不要延续上一轮对话的话题（除非这个问题本身就是在追问上一轮的内容）。',
         '请以严格 JSON 格式回复（不要 Markdown）：\n{"answer":"回答内容","answered":true}\n如知识库完全覆盖不到，answered 用 false。',
       ].filter(Boolean).join('\n\n'),
     });
