@@ -373,6 +373,7 @@
         <div class="list-staff" id="list-staff-name"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-trash-icon" onclick="confirmLogout()" title="退出登录">🚪</button>
         <button class="btn-trash-icon" onclick="openProductsModal()" title="产品图册">📦</button>
         <button class="btn-trash-icon" onclick="openTrashModal()" title="回收站">🗑️</button>
         <button class="btn-new" onclick="openNewCustomerModal()">+ 新客户</button>
@@ -642,6 +643,9 @@ async function doLogin() {
 function showErr(msg) {
   const el = document.getElementById('login-error');
   el.textContent = msg; el.style.display = 'block';
+}
+function confirmLogout() {
+  if (confirm('确定要退出登录吗？')) logout();
 }
 function logout() {
   localStorage.removeItem('coway_session');
