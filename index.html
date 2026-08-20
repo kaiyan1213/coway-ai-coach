@@ -3,253 +3,359 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#00a7e1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Coway AI">
   <title>Coway AI Coach</title>
+  <link rel="icon" type="image/svg+xml" href="/apple-touch-icon.svg">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <style>
-    /* ── 基础 ─────────────────────────────────────────────── */
     :root {
-      --blue:   #3B82F6; --blue-bg:   #DBEAFE; --blue-txt:   #1D4ED8;
-      --yellow: #F59E0B; --yellow-bg: #FEF3C7; --yellow-txt: #92400E;
-      --red:    #EF4444; --red-bg:    #FEE2E2; --red-txt:    #991B1B;
-      --green:  #10B981; --green-bg:  #D1FAE5; --green-txt:  #065F46;
-      --gray:   #6B7280; --gray-bg:   #F3F4F6; --gray-txt:   #374151;
-      --primary: #6366F1;
-      --bg: #F9FAFB; --card: #fff; --border: #E5E7EB;
-      --text: #111827; --muted: #6B7280;
+      --p:    #00a7e1;
+      --p-dk: #0092c7;
+      --p-bg: #dff4fb;
+      --p-tx: #00607f;
+      --y-bg: #FEF3C7; --y-tx: #92400E;
+      --r:    #EF4444; --r-bg: #FEE2E2; --r-tx: #991B1B;
+      --g-bg: #D1FAE5; --g-tx: #065F46;
+      --gr:   #6B7280; --gr-bg:#F3F4F6; --gr-tx:#374151;
+      --bg:   #EDF2F7;
+      --card: #FFFFFF;
+      --bdr:  #E2E8F0;
+      --text: #0F172A;
+      --sub:  #64748B;
+      --surf: #F8FAFC;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-           background: var(--bg); color: var(--text); font-size: 15px; }
-    .view { display: none; flex-direction: column; min-height: 100vh; }
-    .view.active { display: flex; }
-    button { cursor: pointer; font-family: inherit; }
-    textarea, input, select {
-      font-family: inherit; font-size: 15px;
-      outline: none; border: 1.5px solid var(--border); border-radius: 10px;
-    }
-    textarea:focus, input:focus, select:focus { border-color: var(--primary); }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:15px;-webkit-font-smoothing:antialiased}
+    .view{display:none;flex-direction:column;min-height:100vh}
+    .view.active{display:flex}
+    button{cursor:pointer;font-family:inherit}
+    textarea,input,select{font-family:inherit;font-size:15px;outline:none;border:1.5px solid var(--bdr);border-radius:12px}
+    textarea:focus,input:focus,select:focus{border-color:var(--p)}
 
-    /* ── 状态徽章 ─────────────────────────────────────────── */
-    .badge {
-      display: inline-block; padding: 2px 8px; border-radius: 20px;
-      font-size: 12px; font-weight: 600; white-space: nowrap;
+    /* ── Keyframes ── */
+    @keyframes fadeUp{
+      from{opacity:0;transform:translateY(14px) scale(.98)}
+      to  {opacity:1;transform:translateY(0) scale(1)}
     }
-    .badge-新客户 { background: var(--blue-bg); color: var(--blue-txt); }
-    .badge-考虑中 { background: var(--yellow-bg); color: var(--yellow-txt); }
-    .badge-需跟进 { background: var(--red-bg); color: var(--red-txt); }
-    .badge-成交   { background: var(--green-bg); color: var(--green-txt); }
-    .badge-冷了   { background: var(--gray-bg); color: var(--gray-txt); }
-
-    /* ── 登录页 ──────────────────────────────────────────── */
-    #view-login {
-      align-items: center; justify-content: center;
-      padding: 24px 20px; background: var(--bg);
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+    @keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+    @keyframes dotJump{
+      0%,60%,100%{transform:translateY(0)}
+      30%         {transform:translateY(-7px)}
     }
-    .login-card {
-      background: var(--card); border-radius: 20px;
-      padding: 32px 24px; width: 100%; max-width: 380px;
-      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    @keyframes shimmer{
+      0%  {background-position:-200% center}
+      100%{background-position: 200% center}
     }
-    .login-logo { font-size: 28px; font-weight: 800; color: var(--primary); margin-bottom: 4px; }
-    .login-sub  { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
-    .login-label { font-size: 13px; font-weight: 600; color: var(--muted); margin-bottom: 6px; }
-    .login-select, .login-pin {
-      width: 100%; padding: 12px 14px; margin-bottom: 14px;
-      border-radius: 12px; border: 1.5px solid var(--border); background: var(--bg);
-    }
-    .btn-login {
-      width: 100%; padding: 14px; background: var(--primary); color: #fff;
-      border: none; border-radius: 12px; font-size: 16px; font-weight: 700;
-      margin-top: 4px; transition: opacity .15s;
-    }
-    .btn-login:active { opacity: .8; }
-    #login-error { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
-
-    /* ── 客户列表页 ───────────────────────────────────────── */
-    .list-header {
-      background: var(--card); padding: 16px 16px 0;
-      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
-    }
-    .list-header-top {
-      display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;
-    }
-    .list-title { font-size: 18px; font-weight: 700; }
-    .list-staff { font-size: 13px; color: var(--muted); }
-    .btn-new {
-      background: var(--primary); color: #fff; border: none;
-      border-radius: 20px; padding: 8px 16px; font-size: 14px; font-weight: 600;
-    }
-    .filter-bar {
-      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px;
-      scrollbar-width: none; -ms-overflow-style: none;
-    }
-    .filter-bar::-webkit-scrollbar { display: none; }
-    .filter-btn {
-      padding: 5px 14px; border-radius: 20px; border: 1.5px solid var(--border);
-      background: var(--bg); color: var(--muted); font-size: 13px; font-weight: 500;
-      white-space: nowrap;
-    }
-    .filter-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-    .customer-list { flex: 1; padding: 12px; }
-    .customer-card {
-      background: var(--card); border-radius: 14px; padding: 14px 16px;
-      margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;
-      box-shadow: 0 1px 4px rgba(0,0,0,.06); cursor: pointer; transition: box-shadow .15s;
-    }
-    .customer-card:active { box-shadow: 0 0 0 2px var(--primary); }
-    .customer-label { font-weight: 600; font-size: 16px; margin-bottom: 4px; }
-    .customer-time  { font-size: 12px; color: var(--muted); }
-    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
-    .empty-icon  { font-size: 40px; margin-bottom: 12px; }
-
-    /* ── Thread 页 ───────────────────────────────────────── */
-    #view-thread { background: var(--bg); }
-    .thread-header {
-      background: var(--card); padding: 14px 16px;
-      display: flex; align-items: center; gap: 12px;
-      border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10;
-    }
-    .btn-back {
-      background: none; border: none; font-size: 22px; color: var(--primary); padding: 0 4px;
-    }
-    .thread-title { font-weight: 700; font-size: 17px; flex: 1; }
-    .status-bar {
-      background: var(--card); padding: 10px 12px;
-      display: flex; gap: 6px; overflow-x: auto;
-      border-bottom: 1px solid var(--border);
-      scrollbar-width: none;
-    }
-    .status-bar::-webkit-scrollbar { display: none; }
-    .status-btn {
-      padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
-      background: var(--bg); font-size: 13px; font-weight: 500; color: var(--muted);
-      white-space: nowrap;
-    }
-    .status-btn.active-新客户 { background: var(--blue-bg); color: var(--blue-txt); border-color: var(--blue); }
-    .status-btn.active-考虑中 { background: var(--yellow-bg); color: var(--yellow-txt); border-color: var(--yellow); }
-    .status-btn.active-需跟进 { background: var(--red-bg); color: var(--red-txt); border-color: var(--red); }
-    .status-btn.active-成交   { background: var(--green-bg); color: var(--green-txt); border-color: var(--green); }
-    .status-btn.active-冷了   { background: var(--gray-bg); color: var(--gray-txt); border-color: var(--gray); }
-
-    /* 互动历史 */
-    .thread-content { flex: 1; overflow-y: auto; padding: 12px 12px 4px; }
-    .history-item {
-      background: var(--card); border-radius: 12px; margin-bottom: 10px;
-      padding: 12px 14px; box-shadow: 0 1px 3px rgba(0,0,0,.05);
-    }
-    .history-time { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
-    .history-summary { font-size: 14px; font-weight: 500; margin-bottom: 6px; }
-    .history-toggle {
-      font-size: 12px; color: var(--primary); background: none; border: none;
-      padding: 0; font-weight: 500;
-    }
-    .history-suggestion {
-      display: none; margin-top: 8px; padding-top: 8px;
-      border-top: 1px solid var(--border); font-size: 14px; line-height: 1.6;
-      color: #374151;
-    }
-    .history-suggestion.open { display: block; }
-    .no-history { text-align: center; padding: 24px; color: var(--muted); font-size: 14px; }
-
-    /* AI 回复结果卡片 */
-    .ai-result-card {
-      background: #EEF2FF; border: 1.5px solid var(--primary);
-      border-radius: 14px; padding: 16px; margin-bottom: 12px;
-    }
-    .ai-result-label { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 8px; }
-    .ai-suggestion-text {
-      font-size: 15px; line-height: 1.65; color: var(--text); margin-bottom: 10px;
-      white-space: pre-wrap;
-    }
-    .ai-reasoning { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
-    .btn-copy {
-      background: var(--primary); color: #fff; border: none;
-      border-radius: 8px; padding: 9px 18px; font-size: 14px; font-weight: 600;
+    @keyframes slideIn{
+      from{opacity:0;transform:translateX(-6px)}
+      to  {opacity:1;transform:translateX(0)}
     }
 
-    /* 操作区 */
-    .action-area {
-      background: var(--card); border-top: 1px solid var(--border);
-      padding: 12px 14px 20px;
-    }
-    .action-tabs {
-      display: flex; gap: 8px; margin-bottom: 12px;
-    }
-    .tab-btn {
-      flex: 1; padding: 8px; border-radius: 8px; border: 1.5px solid var(--border);
-      background: var(--bg); font-size: 13px; font-weight: 500; color: var(--muted);
-    }
-    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
-    .upload-zone {
-      border: 2px dashed var(--border); border-radius: 10px; padding: 16px;
-      text-align: center; color: var(--muted); font-size: 14px; cursor: pointer;
-      margin-bottom: 10px;
-    }
-    .upload-zone:active { border-color: var(--primary); }
-    #image-previews {
-      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px;
-    }
-    .preview-wrap {
-      position: relative; width: 72px; height: 72px;
-    }
-    .preview-wrap img {
-      width: 72px; height: 72px; object-fit: cover; border-radius: 8px;
-    }
-    .preview-rm {
-      position: absolute; top: -6px; right: -6px;
-      background: var(--red); color: #fff; border: none;
-      border-radius: 50%; width: 20px; height: 20px; font-size: 12px; line-height: 20px;
-      text-align: center; padding: 0;
-    }
-    .action-textarea {
-      width: 100%; padding: 10px 12px; border-radius: 10px; border: 1.5px solid var(--border);
-      resize: none; font-size: 14px; margin-bottom: 10px; background: var(--bg);
-    }
-    .btn-submit {
-      width: 100%; padding: 13px; background: var(--primary); color: #fff;
-      border: none; border-radius: 12px; font-size: 15px; font-weight: 700;
-    }
-    .btn-submit:disabled { background: #A5B4FC; cursor: not-allowed; }
-    .loading-text { text-align: center; color: var(--primary); font-size: 14px; padding: 6px; }
+    /* ── Badges ── */
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;letter-spacing:.3px}
+    .badge-新客户{background:var(--p-bg);color:var(--p-tx)}
+    .badge-考虑中{background:var(--y-bg);color:var(--y-tx)}
+    .badge-需跟进{background:var(--r-bg);color:var(--r-tx)}
+    .badge-成交  {background:var(--g-bg);color:var(--g-tx)}
+    .badge-冷了  {background:var(--gr-bg);color:var(--gr-tx)}
 
-    /* 新客户弹窗 */
-    .modal-mask {
-      display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5);
-      z-index: 100; align-items: flex-end; justify-content: center;
+    /* ── Login ── */
+    #view-login{
+      align-items:center;justify-content:center;padding:28px 20px;
+      background:linear-gradient(145deg,#b8e7f7 0%,#d4eef8 30%,#edf2f7 70%);
     }
-    .modal-mask.open { display: flex; }
-    .modal-box {
-      background: var(--card); width: 100%; max-width: 500px;
-      border-radius: 20px 20px 0 0; padding: 24px 20px 36px;
+    .login-card{
+      background:var(--card);border-radius:28px;
+      padding:40px 26px 32px;width:100%;max-width:380px;
+      box-shadow:0 2px 4px rgba(0,0,0,.04),0 8px 32px rgba(0,167,225,.16),0 32px 64px rgba(0,167,225,.06);
     }
-    .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 16px; }
-    .modal-input {
-      width: 100%; padding: 12px 14px; border-radius: 12px;
-      border: 1.5px solid var(--border); font-size: 16px; margin-bottom: 12px;
-      background: var(--bg);
+    .login-logo-wrap{display:flex;justify-content:center;margin-bottom:8px}
+    .login-logo-wrap img{height:36px;width:auto;object-fit:contain}
+    .login-tagline{text-align:center;font-size:13px;color:var(--sub);margin-bottom:32px;font-weight:500;letter-spacing:.2px}
+    .login-label{font-size:11px;font-weight:700;color:var(--sub);margin-bottom:7px;letter-spacing:.7px;text-transform:uppercase}
+    .login-select,.login-pin{
+      width:100%;padding:13px 14px;margin-bottom:14px;
+      border-radius:13px;border:1.5px solid var(--bdr);
+      background:var(--surf);font-size:15px;color:var(--text);
     }
-    .modal-actions { display: flex; gap: 10px; }
-    .btn-confirm { flex: 2; padding: 13px; background: var(--primary); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 700; }
-    .btn-cancel  { flex: 1; padding: 13px; background: var(--gray-bg); color: var(--gray-txt); border: none; border-radius: 12px; font-size: 15px; font-weight: 600; }
+    .btn-login{
+      width:100%;padding:15px;
+      background:linear-gradient(135deg,#00bef5,#0095cc);
+      color:#fff;border:none;border-radius:14px;font-size:16px;font-weight:800;
+      margin-top:6px;letter-spacing:.2px;
+      box-shadow:0 4px 14px rgba(0,167,225,.45),0 1px 3px rgba(0,0,0,.1);
+      transition:opacity .15s,transform .1s;
+    }
+    .btn-login:active{opacity:.88;transform:scale(.98)}
+    #login-error{color:var(--r);font-size:13px;margin-top:10px;display:none;text-align:center}
 
-    /* Toast */
-    #toast {
-      position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
-      background: rgba(0,0,0,.75); color: #fff; padding: 8px 18px;
-      border-radius: 20px; font-size: 14px; pointer-events: none;
-      opacity: 0; transition: opacity .2s; z-index: 999;
+    /* ── List header ── */
+    .list-header{
+      background:var(--card);padding:10px 16px 0;
+      border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10;
+      box-shadow:0 1px 0 var(--bdr),0 2px 8px rgba(0,0,0,.04);
     }
-    #toast.show { opacity: 1; }
+    .list-header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .list-staff{font-size:12px;color:var(--sub);margin-left:8px;font-weight:500}
+    .btn-new{
+      background:linear-gradient(135deg,#00bef5,#0095cc);
+      color:#fff;border:none;border-radius:22px;padding:9px 18px;font-size:14px;font-weight:700;
+      box-shadow:0 3px 10px rgba(0,167,225,.4);
+      transition:transform .1s,opacity .15s;
+    }
+    .btn-new:active{transform:scale(.96);opacity:.88}
+    .filter-bar{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;-ms-overflow-style:none}
+    .filter-bar::-webkit-scrollbar{display:none}
+    .filter-btn{padding:5px 14px;border-radius:20px;border:1.5px solid var(--bdr);background:var(--surf);color:var(--sub);font-size:13px;font-weight:600;white-space:nowrap;transition:all .15s}
+    .filter-btn.active{background:var(--p);color:#fff;border-color:var(--p)}
+
+    /* ── Search bar ── */
+    .search-wrap{padding:0 0 10px}
+    .search-input{width:100%;padding:9px 16px;border:1.5px solid var(--bdr);border-radius:22px;background:var(--surf);font-size:14px;color:var(--text)}
+    .search-input:focus{border-color:var(--p)}
+
+    /* ── Quick Ask panel ── */
+    .quick-ask-panel{background:var(--card);border-top:1px solid var(--bdr);border-bottom:1px solid var(--bdr);padding:10px 12px;flex-shrink:0}
+    .quick-ask-response{background:var(--p-bg);border-radius:12px;padding:11px 13px;margin-bottom:10px;font-size:14px;line-height:1.7;color:var(--text);white-space:pre-wrap;display:none;position:relative}
+    .quick-ask-response.show{display:block;animation:fadeUp .3s ease}
+    .quick-ask-response-label{font-size:10px;font-weight:800;color:var(--p);letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase}
+    .quick-ask-row{display:flex;gap:8px;align-items:center}
+    .quick-ask-input{flex:1;padding:10px 14px;border:1.5px solid var(--bdr);border-radius:22px;background:var(--surf);font-size:14px;color:var(--text)}
+    .quick-ask-input:focus{border-color:var(--p)}
+    .quick-ask-btn{background:linear-gradient(135deg,#00bef5,#0095cc);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,167,225,.35);transition:transform .1s,opacity .15s}
+    .quick-ask-btn:active{transform:scale(.92);opacity:.88}
+    .quick-ask-copy{font-size:11px;color:var(--p);background:none;border:none;padding:4px 0 0;font-weight:600;display:none}
+    .quick-ask-response.show + .quick-ask-copy-wrap{display:flex}
+    .quick-ask-copy-wrap{display:none;justify-content:flex-end;margin-bottom:8px}
+
+    .customer-list{flex:1;overflow-y:auto;padding:12px 12px}
+
+    /* ── Customer card ── */
+    .customer-card{
+      background:var(--card);border-radius:18px;padding:13px 14px;
+      margin-bottom:10px;display:flex;align-items:center;gap:12px;
+      box-shadow:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.06);
+      cursor:pointer;transition:transform .12s,box-shadow .12s;
+      animation:fadeUp .3s ease both;
+      -webkit-user-select:none;user-select:none;
+      -webkit-touch-callout:none;
+    }
+    .customer-card:active{transform:scale(.98);box-shadow:0 0 0 2.5px var(--p),0 2px 8px rgba(0,167,225,.15)}
+    .card-delete-btn{display:none}
+    @media (hover:hover) and (pointer:fine){
+      .card-delete-btn{
+        display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        width:32px;height:32px;border-radius:50%;border:none;background:transparent;
+        font-size:16px;opacity:0;transition:opacity .15s,background .15s;cursor:pointer;
+      }
+      .customer-card:hover .card-delete-btn{opacity:.55}
+      .card-delete-btn:hover{opacity:1 !important;background:var(--r-bg)}
+    }
+    .avatar{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:900;color:#fff;letter-spacing:-.5px}
+    .customer-info{flex:1;min-width:0}
+    .customer-label{font-weight:700;font-size:15px;margin-bottom:2px}
+    .customer-note{font-size:12px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
+    .customer-time{font-size:11px;color:var(--sub)}
+    .empty-state{text-align:center;padding:64px 20px;color:var(--sub)}
+    .empty-icon{font-size:48px;margin-bottom:14px}
+    .empty-title{font-weight:700;font-size:16px;color:var(--text);margin-bottom:6px}
+
+    /* ── Thread ── */
+    #view-thread{background:var(--bg);height:100dvh;height:100vh;overflow:hidden}
+    /* ── Action area pinned to bottom ── */
+    .action-area{flex-shrink:0}
+    .thread-header{
+      background:var(--card);padding:10px 12px;
+      display:flex;align-items:center;gap:10px;
+      border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10;
+      box-shadow:0 1px 0 var(--bdr),0 2px 8px rgba(0,0,0,.04);
+    }
+    .btn-back{
+      background:var(--surf);border:1.5px solid var(--bdr);border-radius:50%;
+      width:36px;height:36px;font-size:20px;color:var(--p);flex-shrink:0;
+      display:flex;align-items:center;justify-content:center;padding-right:2px;
+      transition:background .12s;
+    }
+    .btn-back:active{background:var(--p-bg)}
+    .thread-hd-info{flex:1;min-width:0}
+    .thread-title{font-weight:700;font-size:16px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .thread-subtitle{font-size:11px;color:var(--sub)}
+    .status-bar{background:var(--card);padding:7px 12px;display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--bdr);scrollbar-width:none}
+    .status-bar::-webkit-scrollbar{display:none}
+    .status-btn{padding:5px 13px;border-radius:20px;border:1.5px solid var(--bdr);background:var(--surf);font-size:12px;font-weight:600;color:var(--sub);white-space:nowrap;transition:all .15s}
+    .status-btn.active-新客户{background:var(--p-bg);color:var(--p-tx);border-color:var(--p)}
+    .status-btn.active-考虑中{background:var(--y-bg);color:var(--y-tx);border-color:#F59E0B}
+    .status-btn.active-需跟进{background:var(--r-bg);color:var(--r-tx);border-color:var(--r)}
+    .status-btn.active-成交  {background:var(--g-bg);color:var(--g-tx);border-color:#10B981}
+    .status-btn.active-冷了  {background:var(--gr-bg);color:var(--gr-tx);border-color:var(--gr)}
+
+    /* ── Note panel (in-content collapsible) ── */
+    .note-panel{background:var(--card);border-radius:14px;margin-bottom:12px;border:1.5px solid var(--bdr);overflow:hidden}
+    .note-panel-header{display:flex;align-items:center;gap:8px;padding:10px 13px;cursor:pointer;-webkit-user-select:none;user-select:none}
+    .note-panel-label{font-size:12px;font-weight:700;color:var(--sub);letter-spacing:.3px;flex-shrink:0}
+    .note-preview-text{flex:1;font-size:12px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;opacity:.7}
+    .note-chevron{font-size:11px;color:var(--sub);transition:transform .2s;flex-shrink:0}
+    .note-panel.open .note-chevron{transform:rotate(180deg)}
+    .note-panel-body{display:none;padding:0 13px 12px}
+    .note-panel.open .note-panel-body{display:block;animation:fadeIn .15s ease}
+    .note-status{font-size:11px;color:var(--sub);margin-top:5px;text-align:right;min-height:14px}
+    .note-textarea{width:100%;padding:9px 11px;border:1.5px solid var(--bdr);border-radius:10px;background:var(--surf);font-size:13px;resize:none;line-height:1.5;color:var(--text)}
+    .note-textarea:focus{border-color:var(--p);outline:none}
+
+    /* ── History ── */
+    .thread-content{flex:1;overflow-y:auto;padding:14px 12px 4px}
+    .history-item{margin-bottom:14px;animation:slideIn .3s ease both}
+    .history-time{font-size:11px;color:var(--sub);text-align:center;margin-bottom:8px;font-weight:500}
+    .history-bubble{
+      background:var(--card);border-radius:4px 16px 16px 16px;padding:12px 14px;
+      box-shadow:0 1px 2px rgba(0,0,0,.04),0 2px 6px rgba(0,0,0,.06);
+      border-left:3px solid var(--p);
+    }
+    .history-summary{font-size:13px;font-weight:600;color:var(--text);margin-bottom:6px}
+    .history-toggle{font-size:12px;color:var(--p);background:none;border:none;padding:0;font-weight:600}
+    .history-suggestion{display:none;margin-top:8px;padding-top:8px;border-top:1px solid var(--bdr);font-size:13px;line-height:1.65;color:#374151}
+    .history-suggestion.open{display:block;animation:fadeIn .2s ease}
+    .no-history{text-align:center;padding:32px 20px;color:var(--sub);font-size:14px}
+
+    /* ── AI result card ── */
+    .ai-result-card{
+      background:var(--card);border-radius:16px;padding:16px 16px 14px;margin-bottom:14px;
+      animation:fadeUp .4s cubic-bezier(.22,1,.36,1) both;
+      box-shadow:0 2px 10px rgba(0,0,0,.07);
+      border-left:4px solid var(--p);
+    }
+    .ai-suggestion-text{
+      font-size:15px;line-height:1.8;color:var(--text);margin-bottom:14px;
+      white-space:pre-wrap;
+    }
+    /* Typewriter cursor */
+    .ai-suggestion-text.typing::after{
+      content:'|';color:var(--p);animation:pulse .7s ease infinite;margin-left:1px;
+    }
+    .ai-reasoning{font-size:12px;color:var(--sub);margin-bottom:12px;line-height:1.5;padding:8px 10px;background:var(--surf);border-radius:8px}
+    .ai-product-img{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px;background:var(--surf);border-radius:10px;cursor:pointer}
+    .ai-product-img img{width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0}
+    .ai-product-name{font-size:13px;font-weight:600;color:var(--text)}
+    .btn-copy{
+      width:100%;padding:13px;
+      background:linear-gradient(135deg,#00bef5,#0095cc);
+      color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;
+      box-shadow:0 3px 10px rgba(0,167,225,.35);
+      transition:transform .1s,opacity .15s;
+    }
+    .btn-copy:active{transform:scale(.98);opacity:.88}
+
+    /* ── Loading dots ── */
+    .loading-dots{display:flex;align-items:center;justify-content:center;gap:6px;padding:14px 0}
+    .loading-dots span{
+      width:8px;height:8px;border-radius:50%;background:var(--p);display:inline-block;
+      animation:dotJump 1.1s ease-in-out infinite;
+    }
+    .loading-dots span:nth-child(2){animation-delay:.18s}
+    .loading-dots span:nth-child(3){animation-delay:.36s}
+
+    /* ── Action area ── */
+    .action-area{background:var(--card);border-top:1px solid var(--bdr);padding:10px 12px 24px}
+    .action-tabs{display:flex;gap:4px;margin-bottom:10px;background:var(--surf);border-radius:12px;padding:3px;border:1px solid var(--bdr)}
+    .tab-btn{flex:1;padding:8px 6px;border-radius:9px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--sub);transition:all .15s}
+    .tab-btn.active{background:var(--card);color:var(--p);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+    .tab-panel{display:none}
+    .tab-panel.active{display:block;animation:fadeIn .2s ease}
+    .upload-zone{border:2px dashed var(--bdr);border-radius:14px;padding:16px;text-align:center;color:var(--sub);font-size:13px;cursor:pointer;margin-bottom:8px;background:var(--surf);transition:border-color .15s,background .15s}
+    .upload-zone:active{border-color:var(--p);background:var(--p-bg)}
+    #image-previews{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+    .preview-wrap{position:relative;width:68px;height:68px}
+    .preview-wrap img{width:68px;height:68px;object-fit:cover;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.12)}
+    .preview-rm{position:absolute;top:-6px;right:-6px;background:var(--r);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:12px;line-height:20px;text-align:center;padding:0}
+    .action-textarea{width:100%;padding:10px 12px;border-radius:12px;border:1.5px solid var(--bdr);resize:none;font-size:14px;margin-bottom:8px;background:var(--surf);line-height:1.5;color:var(--text)}
+    .btn-submit{
+      width:100%;padding:14px;
+      background:linear-gradient(135deg,#00bef5,#0095cc);
+      color:#fff;border:none;border-radius:14px;font-size:15px;font-weight:800;letter-spacing:.2px;
+      box-shadow:0 4px 14px rgba(0,167,225,.4);
+      transition:transform .1s,opacity .15s;
+    }
+    .btn-submit:active{transform:scale(.98)}
+    .btn-submit:disabled{background:#a0ddf2;box-shadow:none;cursor:not-allowed;transform:none}
+
+    /* ── Modal ── */
+    .modal-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
+    .modal-mask.open{display:flex}
+    .modal-box{background:var(--card);width:100%;max-width:500px;border-radius:26px 26px 0 0;padding:24px 20px 38px;box-shadow:0 -8px 32px rgba(0,0,0,.12)}
+    .modal-title{font-size:18px;font-weight:800;margin-bottom:18px}
+    .modal-input{width:100%;padding:13px 14px;border-radius:13px;border:1.5px solid var(--bdr);font-size:15px;margin-bottom:12px;background:var(--surf);color:var(--text)}
+    .modal-actions{display:flex;gap:10px}
+    .btn-confirm{flex:2;padding:14px;background:linear-gradient(135deg,#00bef5,#0095cc);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;box-shadow:0 3px 10px rgba(0,167,225,.35)}
+    .btn-cancel {flex:1;padding:14px;background:var(--surf);color:var(--sub);border:1.5px solid var(--bdr);border-radius:13px;font-size:15px;font-weight:600}
+
+    /* ── Menu ── */
+    .btn-menu{background:var(--surf);border:1.5px solid var(--bdr);border-radius:50%;width:36px;height:36px;font-size:18px;color:var(--sub);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .12s}
+    .btn-menu:active{background:var(--p-bg)}
+    .thread-menu-wrap{position:relative}
+    .thread-menu{position:absolute;right:0;top:44px;background:var(--card);border:1px solid var(--bdr);border-radius:16px;overflow:hidden;box-shadow:0 8px 28px rgba(0,0,0,.15);z-index:99;min-width:150px;animation:fadeUp .2s ease}
+    .thread-menu-item{display:block;width:100%;padding:13px 18px;font-size:14px;text-align:left;background:none;border:none;cursor:pointer;font-weight:500;transition:background .1s}
+    .thread-menu-item:active{background:var(--surf)}
+    .thread-menu-item.danger{color:var(--r)}
+
+    /* ── Report error button ── */
+    .btn-report{background:none;border:none;color:var(--sub);font-size:12px;padding:4px 0;font-weight:500;opacity:.7;display:flex;align-items:center;gap:4px;margin-top:6px}
+    .btn-report:active{opacity:1;color:var(--r)}
+
+    /* ── Toast ── */
+    #toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.9);color:#fff;padding:10px 22px;border-radius:26px;font-size:14px;font-weight:500;pointer-events:none;opacity:0;transition:opacity .2s;z-index:999;backdrop-filter:blur(8px);white-space:nowrap}
+    #toast.show{opacity:1}
+
+    /* ── Recycle bin button ── */
+    .btn-trash-icon{background:var(--surf);border:1.5px solid var(--bdr);border-radius:22px;padding:9px 13px;font-size:15px;color:var(--sub);line-height:1;transition:transform .1s,opacity .15s}
+    .btn-trash-icon:active{transform:scale(.96);opacity:.88}
+
+    /* ── Danger button (delete confirm) ── */
+    .btn-danger{flex:2;padding:14px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;box-shadow:0 3px 10px rgba(239,68,68,.35);transition:opacity .15s,transform .1s}
+    .btn-danger:active{opacity:.88;transform:scale(.98)}
+
+    /* ── Trash modal / cards ── */
+    .trash-card{background:var(--card);border-radius:16px;padding:13px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.06);opacity:.88;transition:opacity .3s}
+    .trash-card-info{flex:1;min-width:0}
+    .trash-card-label{font-weight:700;font-size:15px;margin-bottom:3px}
+    .trash-card-time{font-size:12px;color:var(--sub)}
+    .trash-actions{display:flex;flex-direction:column;gap:6px;flex-shrink:0}
+    .btn-restore{background:linear-gradient(135deg,#10B981,#059669);color:#fff;border:none;border-radius:10px;padding:7px 13px;font-size:12px;font-weight:700;box-shadow:0 2px 8px rgba(16,185,129,.3);white-space:nowrap}
+    .btn-restore:active{opacity:.85}
+    .btn-purge{background:var(--surf);border:1.5px solid var(--bdr);color:var(--r);border-radius:10px;padding:6px 12px;font-size:12px;font-weight:600;white-space:nowrap}
+    .btn-purge:active{opacity:.8}
+
+    /* ── Card long-press visual ── */
+    .customer-card.pressing{transform:scale(.97);box-shadow:0 0 0 3px var(--r),0 2px 8px rgba(239,68,68,.15)}
+
+    /* ── Flow Selector ── */
+    #flow-selector-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;padding:0}
+    .flow-sel-card{background:#fff;border-radius:22px 22px 0 0;width:100%;max-width:480px;padding:20px 16px 32px;box-shadow:0 -4px 32px rgba(0,0,0,.15)}
+    .flow-sel-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px;padding:0 2px}
+    .flow-opt{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:13px;border:1.5px solid var(--bdr);margin-bottom:8px;cursor:pointer;transition:background .12s,border-color .12s;-webkit-tap-highlight-color:transparent}
+    .flow-opt:active{background:var(--p-bg);border-color:var(--p)}
+    .flow-num{width:28px;height:28px;border-radius:50%;background:var(--surf);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--sub);flex-shrink:0}
+    .flow-txt{flex:1}
+    .flow-name{font-size:14px;font-weight:600;color:var(--text);line-height:1.3}
+    .flow-desc{font-size:12px;color:var(--sub);margin-top:2px}
+    .flow-skip-row{display:flex;align-items:center;gap:8px;padding:10px 4px 0;border-top:1px solid var(--bdr);margin-top:4px}
+    .flow-skip-input{flex:1;font-size:14px;border:none;outline:none;color:var(--sub);background:transparent;font-family:inherit}
+    .flow-skip-input::placeholder{color:#94A3B8}
+    .flow-skip-btn{background:var(--surf);border:1.5px solid var(--bdr);border-radius:9px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--sub);cursor:pointer;white-space:nowrap}
   </style>
 </head>
 <body>
 
-<!-- ─── 登录页 ───────────────────────────────────────────── -->
+<!-- ─── 登录页 ─────────────────────────────────────────────── -->
 <div id="view-login" class="view">
   <div class="login-card">
-    <div class="login-logo">Coway AI Coach</div>
-    <div class="login-sub">销售回复教练 · 请登录</div>
+    <div class="login-logo-wrap">
+      <img src="/coway-logo.png" alt="Coway" style="height:38px;width:auto;object-fit:contain">
+    </div>
+    <div class="login-tagline">Sales AI Coach · 请登录</div>
     <div class="login-label">选择你的名字</div>
     <select id="login-name" class="login-select">
       <option value="">-- 读取中... --</option>
@@ -262,48 +368,83 @@
   </div>
 </div>
 
-<!-- ─── 客户列表页 ──────────────────────────────────────── -->
-<div id="view-list" class="view">
+<!-- ─── 客户列表页 ──────────────────────────────────────────── -->
+<div id="view-list" class="view" style="height:100dvh;height:100vh;overflow:hidden">
   <div class="list-header">
     <div class="list-header-top">
       <div>
-        <div class="list-title">我的客户</div>
+        <div style="font-size:20px;font-weight:900;color:var(--p);letter-spacing:-.5px;line-height:1">coway</div>
         <div class="list-staff" id="list-staff-name"></div>
       </div>
-      <button class="btn-new" onclick="openNewCustomerModal()">+ 新客户</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-trash-icon" onclick="openProductsModal()" title="产品图册">📦</button>
+        <button class="btn-trash-icon" onclick="openTrashModal()" title="回收站">🗑️</button>
+        <button class="btn-new" onclick="openNewCustomerModal()">+ 新客户</button>
+      </div>
     </div>
-    <div class="filter-bar" id="filter-bar">
-      <button class="filter-btn active" data-filter="all" onclick="setFilter('all')">全部</button>
-      <button class="filter-btn" data-filter="新客户" onclick="setFilter('新客户')">新客户</button>
-      <button class="filter-btn" data-filter="考虑中" onclick="setFilter('考虑中')">考虑中</button>
-      <button class="filter-btn" data-filter="需跟进" onclick="setFilter('需跟进')">需跟进</button>
-      <button class="filter-btn" data-filter="成交"   onclick="setFilter('成交')">成交</button>
-      <button class="filter-btn" data-filter="冷了"   onclick="setFilter('冷了')">冷了</button>
+    <div class="filter-bar">
+      <button class="filter-btn active" data-filter="all"   onclick="setFilter('all')">全部</button>
+      <button class="filter-btn" data-filter="新客户"       onclick="setFilter('新客户')">新客户</button>
+      <button class="filter-btn" data-filter="考虑中"       onclick="setFilter('考虑中')">考虑中</button>
+      <button class="filter-btn" data-filter="需跟进"       onclick="setFilter('需跟进')">需跟进</button>
+      <button class="filter-btn" data-filter="成交"         onclick="setFilter('成交')">成交</button>
+      <button class="filter-btn" data-filter="冷了"         onclick="setFilter('冷了')">冷了</button>
+    </div>
+    <!-- Search bar -->
+    <div class="search-wrap">
+      <input class="search-input" id="search-input" type="search" placeholder="🔍  搜索客户名字..."
+             oninput="setSearch(this.value)">
     </div>
   </div>
+
   <div class="customer-list" id="customer-list"></div>
 </div>
 
-<!-- ─── Thread 页 ─────────────────────────────────────── -->
+<!-- ─── Thread 页 ──────────────────────────────────────────── -->
 <div id="view-thread" class="view">
   <div class="thread-header">
     <button class="btn-back" onclick="goBack()">‹</button>
-    <div class="thread-title" id="thread-label">—</div>
+    <div class="avatar" id="thread-avatar" style="width:36px;height:36px;font-size:14px;margin-right:2px;flex-shrink:0"></div>
+    <div class="thread-hd-info">
+      <div class="thread-title" id="thread-label" onclick="startRenameCustomer()">—</div>
+      <div class="thread-subtitle" id="thread-status-label"></div>
+    </div>
+    <div class="thread-menu-wrap">
+      <button class="btn-menu" onclick="toggleMenu(event)">⋮</button>
+      <div class="thread-menu" id="thread-menu" style="display:none">
+        <button class="thread-menu-item" onclick="startRenameCustomer()">✏️ 改名</button>
+        <button class="thread-menu-item danger" onclick="deleteCustomer()">🗑️ 删除客户</button>
+      </div>
+    </div>
   </div>
+
   <div class="status-bar" id="status-bar"></div>
 
   <div class="thread-content" id="thread-content">
+    <!-- 跟进备注：折叠卡片，滚动区内 -->
+    <div class="note-panel" id="note-panel">
+      <div class="note-panel-header" onclick="toggleNotePanel()">
+        <span class="note-panel-label">📝 备注</span>
+        <span class="note-preview-text" id="note-preview"></span>
+        <span class="note-chevron" id="note-chevron">▾</span>
+      </div>
+      <div class="note-panel-body">
+        <textarea id="note-textarea" class="note-textarea" rows="3"
+                  placeholder="感兴趣的产品、家庭情况、跟进重点、下次行动..."
+                  oninput="onNoteInput()"></textarea>
+        <div class="note-status" id="note-status"></div>
+      </div>
+    </div>
     <div id="ai-result-area"></div>
     <div id="history-list"></div>
   </div>
 
   <div class="action-area">
     <div class="action-tabs">
-      <button class="tab-btn active" id="tab-btn-ss"   onclick="switchTab('screenshot')">截图问怎么回</button>
-      <button class="tab-btn"        id="tab-btn-qa"   onclick="switchTab('qa')">直接问</button>
+      <button class="tab-btn active" id="tab-btn-ss" onclick="switchTab('screenshot')">📷 截图问怎么回</button>
+      <button class="tab-btn"        id="tab-btn-qa" onclick="switchTab('qa')">💬 直接问</button>
     </div>
 
-    <!-- 截图 tab -->
     <div class="tab-panel active" id="tab-screenshot">
       <input type="file" id="file-input" accept="image/*" multiple style="display:none"
              onchange="onFilesSelected(this.files)">
@@ -313,27 +454,33 @@
       <div id="image-previews"></div>
       <textarea id="ss-note" class="action-textarea" rows="2"
                 placeholder="可选：补充说明（如：客户今天再问一次价格）"></textarea>
-      <div id="ss-loading" class="loading-text" style="display:none">正在分析截图...</div>
+      <div id="ss-loading" style="display:none">
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+      </div>
       <button id="btn-ss-submit" class="btn-submit" onclick="submitScreenshot()">分析并给建议</button>
     </div>
 
-    <!-- 直接问 tab -->
     <div class="tab-panel" id="tab-qa">
       <textarea id="qa-question" class="action-textarea" rows="3"
                 placeholder="输入产品知识类问题，例如：Coway X 型号有几个颜色？"></textarea>
-      <div id="qa-loading" class="loading-text" style="display:none">正在查询...</div>
+      <div id="qa-loading" style="display:none">
+        <div class="loading-dots"><span></span><span></span><span></span></div>
+      </div>
       <button id="btn-qa-submit" class="btn-submit" onclick="submitQuestion()">提问</button>
     </div>
   </div>
 </div>
 
-<!-- ─── 新客户弹窗 ─────────────────────────────────────── -->
+<!-- ─── 新客户弹窗 ──────────────────────────────────────────── -->
 <div class="modal-mask" id="modal-new" onclick="closeNewCustomerModal(event)">
   <div class="modal-box">
     <div class="modal-title">+ 新增客户</div>
     <input id="new-label" class="modal-input" type="text"
            placeholder="客户名字或代号（例：陈太太）" maxlength="50"
-           onkeydown="if(event.key==='Enter')confirmNewCustomer()">
+           onkeydown="if(event.key==='Enter')document.getElementById('new-note').focus()">
+    <textarea id="new-note" class="modal-input" rows="3"
+              placeholder="跟进备注（可选）：感兴趣的产品、家庭情况..."
+              style="resize:none;font-size:14px;line-height:1.5;min-height:72px"></textarea>
     <div class="modal-actions">
       <button class="btn-confirm" onclick="confirmNewCustomer()">建档</button>
       <button class="btn-cancel"  onclick="closeNewCustomerModal()">取消</button>
@@ -341,69 +488,128 @@
   </div>
 </div>
 
-<!-- Toast 提示 -->
+<!-- ─── 报错弹窗 ──────────────────────────────────────────────── -->
+<div class="modal-mask" id="modal-feedback" onclick="closeFeedbackModal(event)">
+  <div class="modal-box">
+    <div class="modal-title">⚠️ 报告 AI 回复错误</div>
+    <div style="background:var(--surf);border-radius:10px;padding:10px 12px;font-size:13px;color:var(--sub);margin-bottom:14px;max-height:80px;overflow:hidden;line-height:1.5" id="feedback-preview"></div>
+    <textarea id="feedback-note" class="modal-input" rows="4"
+              placeholder="哪里有问题？（例：时间说错了，正确应该是2pm申请明天才出结果）"
+              style="resize:none;font-size:14px;line-height:1.5;min-height:90px"></textarea>
+    <div class="modal-actions">
+      <button class="btn-confirm" onclick="submitFeedback()" style="background:linear-gradient(135deg,#ef4444,#dc2626);box-shadow:0 3px 10px rgba(239,68,68,.35)">提交报错</button>
+      <button class="btn-cancel"  onclick="closeFeedbackModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 删除确认弹窗 ────────────────────────────────────────── -->
+<div class="modal-mask" id="modal-delete" onclick="closeDeleteModal(event)">
+  <div class="modal-box">
+    <div class="modal-title">🗑️ 删除客户</div>
+    <div id="delete-modal-msg" style="font-size:15px;color:var(--sub);line-height:1.65;margin-bottom:22px"></div>
+    <div class="modal-actions">
+      <button class="btn-danger" onclick="doSoftDelete()">确定删除</button>
+      <button class="btn-cancel" onclick="closeDeleteModal()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── 回收站弹窗 ─────────────────────────────────────────── -->
+<div class="modal-mask" id="modal-trash" onclick="closeTrashModal(event)">
+  <div class="modal-box" style="max-height:88vh;overflow-y:auto;padding-bottom:28px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div class="modal-title" style="margin-bottom:0">🗑️ 回收站</div>
+      <button class="btn-cancel" style="flex:0;padding:7px 14px;font-size:13px" onclick="closeTrashModal()">关闭</button>
+    </div>
+    <div style="font-size:13px;color:var(--sub);margin-bottom:16px">已删除的客户，互动记录完好保留</div>
+    <div id="trash-list"></div>
+  </div>
+</div>
+
+<!-- ─── 产品图册弹窗 ───────────────────────────────────────── -->
+<div class="modal-mask" id="modal-products" onclick="closeProductsModal(event)">
+  <div class="modal-box" style="max-height:88vh;overflow-y:auto;padding-bottom:28px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <div class="modal-title" style="margin-bottom:0">📦 产品图册</div>
+      <button class="btn-cancel" style="flex:0;padding:7px 14px;font-size:13px" onclick="closeProductsModal()">关闭</button>
+    </div>
+    <div style="font-size:13px;color:var(--sub);margin-bottom:16px">点图片可放大 / 复制产品链接发给客户</div>
+    <div id="products-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px"></div>
+  </div>
+</div>
+
+<!-- ─── 产品放大弹窗 ───────────────────────────────────────── -->
+<div class="modal-mask" id="modal-product-view" onclick="closeProductView(event)">
+  <div class="modal-box" style="max-height:88vh;overflow-y:auto;padding-bottom:22px;text-align:center">
+    <img id="product-view-img" style="width:100%;border-radius:12px;margin-bottom:14px;max-height:50vh;object-fit:contain">
+    <div id="product-view-name" style="font-size:16px;font-weight:800;margin-bottom:14px"></div>
+    <div class="modal-actions" style="margin-top:0">
+      <button class="btn-cancel" id="product-view-link" style="display:none" onclick="copyProductLink()">复制产品链接</button>
+      <button class="btn-cancel" onclick="closeProductView()">关闭</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
-// ─── CONFIG ───────────────────────────────────────────────────
-const STATUS_LIST = ['新客户', '考虑中', '需跟进', '成交', '冷了'];
-// ─────────────────────────────────────────────────────────────
+const STATUS_LIST = ['新客户','考虑中','需跟进','成交','冷了'];
+const AVATAR_COLORS = ['#00a7e1','#0891B2','#059669','#7C3AED','#DB2777','#EA580C','#0284C7','#65A30D'];
 
-// ─── STATE ────────────────────────────────────────────────────
 let S = {
-  token: null,
-  staffName: null,
-  customers: [],
-  filter: 'all',
-  currentCustomerId: null,
-  currentCustomer: null,
-  interactions: [],
-  selectedImages: [],   // File[]
+  token:null, staffName:null, customers:[], filter:'all',
+  currentCustomerId:null, currentCustomer:null, interactions:[], selectedImages:[],
+  lastAI: null,
 };
 
-// ─── API HELPER ───────────────────────────────────────────────
-async function api(path, opts = {}) {
-  const headers = { 'Content-Type': 'application/json' };
+// ── Avatar ────────────────────────────────────────────────────
+function avatarColor(label) {
+  let h = 0;
+  for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
+function avatarInitial(label) { return (label||'?').trim().slice(0,1).toUpperCase(); }
+function avatarHTML(label, sz) {
+  const s = `background:${avatarColor(label)};width:${sz}px;height:${sz}px;font-size:${Math.round(sz*.38)}px`;
+  return `<div class="avatar" style="${s}">${avatarInitial(label)}</div>`;
+}
+
+// ── API ───────────────────────────────────────────────────────
+async function api(path, opts={}) {
+  const headers = {'Content-Type':'application/json'};
   if (S.token) headers['Authorization'] = 'Bearer ' + S.token;
   const res = await fetch(path, {
-    method: opts.method || 'GET',
-    headers,
+    method: opts.method||'GET', headers,
     body: opts.body ? JSON.stringify(opts.body) : undefined,
   });
   const data = await res.json();
   if (res.status === 401) { logout(); throw new Error('session expired'); }
-  if (!res.ok) throw new Error(data.error || 'API 错误');
+  if (!res.ok) throw new Error(data.error||'API 错误');
   return data;
 }
 
-// ─── VIEW SWITCH ──────────────────────────────────────────────
 function showView(id) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + id).classList.add('active');
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
 }
 
-// ─── AUTH ─────────────────────────────────────────────────────
+// ── Auth ──────────────────────────────────────────────────────
 async function init() {
-  // 尝试从 localStorage 恢复 session
   const saved = localStorage.getItem('coway_session');
   if (saved) {
     try {
       const sess = JSON.parse(saved);
-      S.token = sess.token;
-      S.staffName = sess.staffName;
-      await loadCustomers();
-      renderList();
+      S.token = sess.token; S.staffName = sess.staffName;
+      await loadCustomers(); renderList();
       document.getElementById('list-staff-name').textContent = sess.staffName;
-      showView('list');
-      return;
+      showView('list'); return;
     } catch {
       localStorage.removeItem('coway_session');
-      S.token = null;
-      S.staffName = null;
+      S.token = null; S.staffName = null;
     }
   }
-  await loadStaffDropdown();
-  showView('login');
+  await loadStaffDropdown(); showView('login');
 }
 
 async function loadStaffDropdown() {
@@ -411,15 +617,14 @@ async function loadStaffDropdown() {
     const data = await api('/api/auth');
     const sel = document.getElementById('login-name');
     sel.innerHTML = '<option value="">-- 选择你的名字 --</option>';
-    (data.staff || []).forEach(s => {
+    (data.staff||[]).forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.name;
       opt.textContent = s.name + (s.team ? `（${s.team}）` : '');
       sel.appendChild(opt);
     });
   } catch {
-    document.getElementById('login-name').innerHTML =
-      '<option value="">-- 加载失败，请刷新 --</option>';
+    document.getElementById('login-name').innerHTML = '<option value="">-- 加载失败，请刷新 --</option>';
   }
 }
 
@@ -427,34 +632,26 @@ async function doLogin() {
   const name = document.getElementById('login-name').value;
   const pin  = document.getElementById('login-pin').value.trim();
   document.getElementById('login-error').style.display = 'none';
-  if (!name || !pin) { showErr('请选择名字并输入 PIN'); return; }
+  if (!name||!pin) { showErr('请选择名字并输入 PIN'); return; }
   try {
-    const data = await api('/api/auth', { method: 'POST', body: { name, pin } });
-    S.token = data.token;
-    S.staffName = data.staffName;
-    localStorage.setItem('coway_session', JSON.stringify({ token: data.token, staffName: data.staffName }));
+    const data = await api('/api/auth', {method:'POST', body:{name,pin}});
+    S.token = data.token; S.staffName = data.staffName;
+    localStorage.setItem('coway_session', JSON.stringify({token:data.token, staffName:data.staffName}));
     document.getElementById('list-staff-name').textContent = data.staffName;
-    await loadCustomers();
-    renderList();
-    showView('list');
-  } catch (e) {
-    showErr(e.message || '登录失败');
-  }
+    await loadCustomers(); renderList(); showView('list');
+  } catch(e) { showErr(e.message||'登录失败'); }
 }
 function showErr(msg) {
   const el = document.getElementById('login-error');
-  el.textContent = msg;
-  el.style.display = 'block';
+  el.textContent = msg; el.style.display = 'block';
 }
 function logout() {
   localStorage.removeItem('coway_session');
-  S = { token: null, staffName: null, customers: [], filter: 'all',
-        currentCustomerId: null, currentCustomer: null, interactions: [], selectedImages: [] };
-  loadStaffDropdown();
-  showView('login');
+  S = {token:null,staffName:null,customers:[],filter:'all',currentCustomerId:null,currentCustomer:null,interactions:[],selectedImages:[]};
+  loadStaffDropdown(); showView('login');
 }
 
-// ─── 客户列表 ─────────────────────────────────────────────────
+// ── Customer list ─────────────────────────────────────────────
 async function loadCustomers() {
   const data = await api('/api/data?action=customers');
   S.customers = data.customers || [];
@@ -462,60 +659,87 @@ async function loadCustomers() {
 
 function setFilter(f) {
   S.filter = f;
-  document.querySelectorAll('.filter-btn').forEach(b => {
-    b.classList.toggle('active', b.dataset.filter === f);
-  });
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  renderList();
+}
+
+let S_search = '';
+function setSearch(val) {
+  S_search = val.trim().toLowerCase();
   renderList();
 }
 
 function renderList() {
   const list = document.getElementById('customer-list');
-  const filtered = S.filter === 'all'
-    ? S.customers
-    : S.customers.filter(c => c.status === S.filter);
-
+  let filtered = S.filter === 'all' ? S.customers : S.customers.filter(c => c.status === S.filter);
+  if (S_search) filtered = filtered.filter(c => c.label.toLowerCase().includes(S_search));
   if (!filtered.length) {
-    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div>
-      ${S.filter === 'all' ? '还没有客户，点右上角 + 新增' : '这个状态下暂无客户'}</div>`;
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">📋</div>
+      <div class="empty-title">${S.filter==='all'?'还没有客户':'这个状态暂无客户'}</div>
+      <div style="font-size:14px">${S.filter==='all'?'点右上角 + 开始建档':'换个筛选看看'}</div>
+    </div>`;
     return;
   }
-
-  list.innerHTML = filtered.map(c => `
-    <div class="customer-card" onclick="openThread('${c.id}')">
-      <div>
+  list.innerHTML = filtered.map((c, i) => `
+    <div class="customer-card" data-cid="${c.id}" style="animation-delay:${i*40}ms">
+      ${avatarHTML(c.label, 46)}
+      <div class="customer-info">
         <div class="customer-label">${esc(c.label)}</div>
+        ${c.followup_note ? `<div class="customer-note">${esc(c.followup_note)}</div>` : ''}
         <div class="customer-time">${timeAgo(c.updated_at)}</div>
       </div>
       <span class="badge badge-${c.status}">${c.status}</span>
+      <button class="card-delete-btn" title="删除">🗑️</button>
     </div>`).join('');
+
+  // Attach tap + long-press handlers
+  list.querySelectorAll('.customer-card').forEach(card => {
+    const id = card.dataset.cid;
+    const customer = filtered.find(c => c.id === id);
+    card.addEventListener('click', () => openThread(id));
+    addCardLongPress(card, customer);
+    card.querySelector('.card-delete-btn').addEventListener('click', e => {
+      e.stopPropagation();
+      openDeleteModal(customer);
+    });
+  });
 }
 
-// ─── 新客户 ────────────────────────────────────────────────────
+// ── New customer ──────────────────────────────────────────────
 function openNewCustomerModal() {
   document.getElementById('new-label').value = '';
+  document.getElementById('new-note').value = '';
   document.getElementById('modal-new').classList.add('open');
   setTimeout(() => document.getElementById('new-label').focus(), 100);
 }
 function closeNewCustomerModal(e) {
-  if (!e || e.target === document.getElementById('modal-new')) {
+  if (!e || e.target === document.getElementById('modal-new'))
     document.getElementById('modal-new').classList.remove('open');
+}
+let _creatingCustomer = false;
+async function confirmNewCustomer() {
+  if (_creatingCustomer) return;
+  const label = document.getElementById('new-label').value.trim();
+  const note  = document.getElementById('new-note').value.trim();
+  if (!label) { toast('请输入客户名字或代号'); return; }
+  _creatingCustomer = true;
+  const btn = document.querySelector('#modal-new .btn-confirm');
+  if (btn) { btn.disabled = true; btn.textContent = '建档中...'; }
+  try {
+    const body = {label};
+    if (note) body.followup_note = note;
+    const data = await api('/api/data?action=customer', {method:'POST', body});
+    S.customers.unshift(data.customer);
+    renderList(); closeNewCustomerModal(); toast('客户已建档 ✓');
+  } catch(e) { toast(e.message); }
+  finally {
+    _creatingCustomer = false;
+    if (btn) { btn.disabled = false; btn.textContent = '建档'; }
   }
 }
-async function confirmNewCustomer() {
-  const label = document.getElementById('new-label').value.trim();
-  if (!label) { toast('请输入客户名字或代号'); return; }
-  try {
-    const data = await api('/api/data?action=customer', {
-      method: 'POST', body: { label },
-    });
-    S.customers.unshift(data.customer);
-    renderList();
-    closeNewCustomerModal();
-    toast('客户已建档');
-  } catch (e) { toast(e.message); }
-}
 
-// ─── THREAD ───────────────────────────────────────────────────
+// ── Thread ────────────────────────────────────────────────────
 async function openThread(customerId) {
   S.currentCustomerId = customerId;
   S.selectedImages = [];
@@ -523,6 +747,9 @@ async function openThread(customerId) {
   document.getElementById('ss-note').value = '';
   document.getElementById('qa-question').value = '';
   document.getElementById('ai-result-area').innerHTML = '';
+  document.getElementById('note-textarea').value = '';
+  document.getElementById('note-status').textContent = '';
+  closeMenu();
   showView('thread');
   await loadThread(customerId);
 }
@@ -531,36 +758,39 @@ async function loadThread(customerId) {
   try {
     const data = await api(`/api/data?action=interactions&cid=${customerId}`);
     S.currentCustomer = data.customer;
-    S.interactions = data.interactions || [];
+    S.interactions = data.interactions||[];
     document.getElementById('thread-label').textContent = data.customer.label;
+    const noteVal = data.customer.followup_note || '';
+    document.getElementById('note-textarea').value = noteVal;
+    updateNotePreview(noteVal);
+    // Auto-open if no note yet
+    const panel = document.getElementById('note-panel');
+    if (!noteVal) panel.classList.add('open'); else panel.classList.remove('open');
+    const av = document.getElementById('thread-avatar');
+    av.textContent = avatarInitial(data.customer.label);
+    av.style.background = avatarColor(data.customer.label);
     renderStatusBar(data.customer.status);
     renderHistory();
-    // 滚到最底
     const content = document.getElementById('thread-content');
     content.scrollTop = content.scrollHeight;
-  } catch (e) { toast(e.message); }
+  } catch(e) { toast(e.message); }
 }
 
 function renderStatusBar(currentStatus) {
-  const bar = document.getElementById('status-bar');
-  bar.innerHTML = STATUS_LIST.map(s => `
-    <button class="status-btn ${s === currentStatus ? 'active-' + s : ''}"
-            onclick="changeStatus('${s}')">${s}</button>`).join('');
+  document.getElementById('thread-status-label').textContent = currentStatus;
+  document.getElementById('status-bar').innerHTML = STATUS_LIST.map(s => `
+    <button class="status-btn ${s===currentStatus?'active-'+s:''}" onclick="changeStatus('${s}')">${s}</button>`).join('');
 }
 
 async function changeStatus(newStatus) {
   try {
-    await api('/api/data?action=update-customer', {
-      method: 'POST',
-      body: { id: S.currentCustomerId, status: newStatus },
-    });
+    await api('/api/data?action=update-customer', {method:'POST', body:{id:S.currentCustomerId, status:newStatus}});
     S.currentCustomer.status = newStatus;
     renderStatusBar(newStatus);
-    // 同步更新列表里的客户状态
-    const c = S.customers.find(x => x.id === S.currentCustomerId);
+    const c = S.customers.find(x => x.id===S.currentCustomerId);
     if (c) { c.status = newStatus; c.updated_at = new Date().toISOString(); }
     toast('状态已更新');
-  } catch (e) { toast(e.message); }
+  } catch(e) { toast(e.message); }
 }
 
 function renderHistory() {
@@ -569,82 +799,152 @@ function renderHistory() {
     list.innerHTML = '<div class="no-history">暂无互动记录 · 上传截图开始分析</div>';
     return;
   }
-  list.innerHTML = S.interactions.map((i, idx) => `
-    <div class="history-item">
+  list.innerHTML = S.interactions.map((i, idx) => {
+    const isQA = i.situation_summary?.startsWith('问：');
+    return `
+    <div class="history-item" style="animation-delay:${idx*50}ms">
       <div class="history-time">${formatDate(i.created_at)}</div>
-      <div class="history-summary">${esc(i.situation_summary)}</div>
-      <button class="history-toggle" onclick="toggleSuggestion(${idx})">查看建议 ▾</button>
-      <div class="history-suggestion" id="sug-${idx}">${esc(i.ai_suggestion)}</div>
-    </div>`).join('');
+      <div class="history-bubble" style="${isQA?'border-left-color:#7C3AED':''}">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span style="font-size:10px;font-weight:700;color:${isQA?'#7C3AED':'var(--p)'};letter-spacing:.4px;text-transform:uppercase">${isQA?'💬 问答':'📋 截图分析'}</span>
+        </div>
+        <div class="history-summary">${esc(i.situation_summary)}</div>
+        <button class="history-toggle" onclick="toggleSuggestion(${idx})">查看回复 ▾</button>
+        <div class="history-suggestion" id="sug-${idx}">${esc(i.ai_suggestion)}</div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function toggleSuggestion(idx) {
-  const el = document.getElementById('sug-' + idx);
-  el.classList.toggle('open');
+  document.getElementById('sug-'+idx).classList.toggle('open');
 }
 
 function goBack() {
-  showView('list');
-  renderList(); // 刷新列表（可能状态已变）
+  clearTimeout(noteTimer); closeMenu();
+  showView('list'); renderList();
 }
 
-// ─── TAB 切换 ─────────────────────────────────────────────────
+// ── Note panel toggle ─────────────────────────────────────────
+function toggleNotePanel() {
+  document.getElementById('note-panel').classList.toggle('open');
+}
+function updateNotePreview(text) {
+  const el = document.getElementById('note-preview');
+  if (el) el.textContent = text ? text.replace(/\n/g,' ') : '点击添加备注...';
+}
+
+// ── Note autosave ─────────────────────────────────────────────
+let noteTimer;
+function onNoteInput() {
+  const el = document.getElementById('note-status');
+  if (el) el.textContent = '未保存';
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(saveNote, 1500);
+}
+async function saveNote() {
+  const note = document.getElementById('note-textarea').value;
+  const el = document.getElementById('note-status');
+  if (el) el.textContent = '保存中...';
+  try {
+    await api('/api/data?action=update-customer', {method:'POST', body:{id:S.currentCustomerId, followup_note:note}});
+    if (el) el.textContent = '已保存 ✓';
+    if (S.currentCustomer) S.currentCustomer.followup_note = note;
+    const c = S.customers.find(x => x.id===S.currentCustomerId);
+    if (c) c.followup_note = note;
+    updateNotePreview(note);
+    setTimeout(() => { if (el && el.textContent==='已保存 ✓') el.textContent=''; }, 2000);
+  } catch { if (el) el.textContent='保存失败'; }
+}
+
+// ── Menu ──────────────────────────────────────────────────────
+function toggleMenu(e) {
+  e.stopPropagation();
+  const m = document.getElementById('thread-menu');
+  if (!m) return;
+  m.style.display = m.style.display==='none' ? 'block' : 'none';
+}
+function closeMenu() {
+  const m = document.getElementById('thread-menu');
+  if (m) m.style.display = 'none';
+}
+
+// ── Rename / Delete ───────────────────────────────────────────
+function startRenameCustomer() {
+  closeMenu();
+  const current = S.currentCustomer?.label||'';
+  const newName = prompt('修改客户名字：', current);
+  if (newName!==null && newName.trim() && newName.trim()!==current) renameCustomer(newName.trim());
+}
+async function renameCustomer(newLabel) {
+  try {
+    await api('/api/data?action=update-customer', {method:'POST', body:{id:S.currentCustomerId, label:newLabel}});
+    S.currentCustomer.label = newLabel;
+    document.getElementById('thread-label').textContent = newLabel;
+    const av = document.getElementById('thread-avatar');
+    av.textContent = avatarInitial(newLabel); av.style.background = avatarColor(newLabel);
+    const c = S.customers.find(x => x.id===S.currentCustomerId);
+    if (c) c.label = newLabel;
+    toast('名字已更新 ✓');
+  } catch(e) { toast(e.message); }
+}
+async function deleteCustomer() {
+  closeMenu();
+  const name = S.currentCustomer?.label||'此客户';
+  if (!confirm(`删除「${name}」？可在 🗑️ 回收站找回。`)) return;
+  try {
+    await api('/api/data?action=delete-customer', {method:'POST', body:{id:S.currentCustomerId}});
+    S.customers = S.customers.filter(c => c.id!==S.currentCustomerId);
+    toast('已移至回收站 ✓');
+    showView('list'); renderList();
+  } catch(e) { toast(e.message); }
+}
+
+// ── Tab switch ────────────────────────────────────────────────
 function switchTab(tab) {
-  const isScreenshot = tab === 'screenshot';
-  document.getElementById('tab-btn-ss').classList.toggle('active', isScreenshot);
-  document.getElementById('tab-btn-qa').classList.toggle('active', !isScreenshot);
-  document.getElementById('tab-screenshot').classList.toggle('active', isScreenshot);
-  document.getElementById('tab-qa').classList.toggle('active', !isScreenshot);
-  // 每次切换 tab 清掉 AI 结果
+  const isSS = tab==='screenshot';
+  document.getElementById('tab-btn-ss').classList.toggle('active', isSS);
+  document.getElementById('tab-btn-qa').classList.toggle('active', !isSS);
+  document.getElementById('tab-screenshot').classList.toggle('active', isSS);
+  document.getElementById('tab-qa').classList.toggle('active', !isSS);
   document.getElementById('ai-result-area').innerHTML = '';
 }
 
-// ─── 图片处理 ────────────────────────────────────────────────
+// ── Image handling ────────────────────────────────────────────
 function onFilesSelected(files) {
   const remaining = 3 - S.selectedImages.length;
-  const toAdd = Array.from(files).slice(0, remaining);
-  S.selectedImages = [...S.selectedImages, ...toAdd];
+  S.selectedImages = [...S.selectedImages, ...Array.from(files).slice(0, remaining)];
   renderImagePreviews();
-  // 清空 input 以便重复选同一张图
   document.getElementById('file-input').value = '';
 }
-
-function removeImage(idx) {
-  S.selectedImages.splice(idx, 1);
-  renderImagePreviews();
-}
-
+function removeImage(idx) { S.selectedImages.splice(idx,1); renderImagePreviews(); }
 function renderImagePreviews() {
   const area = document.getElementById('image-previews');
-  area.innerHTML = S.selectedImages.map((file, idx) => {
-    const url = URL.createObjectURL(file);
-    return `<div class="preview-wrap">
-      <img src="${url}" alt="截图${idx+1}">
-      <button class="preview-rm" onclick="removeImage(${idx})">×</button>
-    </div>`;
+  area.innerHTML = S.selectedImages.map((f,i) => {
+    const url = URL.createObjectURL(f);
+    return `<div class="preview-wrap"><img src="${url}" alt="截图${i+1}">
+      <button class="preview-rm" onclick="removeImage(${i})">×</button></div>`;
   }).join('');
-  // 更新上传区提示
   const zone = document.querySelector('.upload-zone');
-  if (S.selectedImages.length >= 3) {
-    zone.textContent = '已选 3 张（上限）';
-  } else {
-    zone.textContent = `📷 点击选择 / 拍摄截图（已选 ${S.selectedImages.length}/3）`;
-  }
+  zone.textContent = S.selectedImages.length>=3 ? '已选 3 张（上限）'
+    : `📷 点击选择 / 拍摄截图（已选 ${S.selectedImages.length}/3）`;
 }
-
-// 压缩图片到 JPEG，防止 payload 过大
-function compressImage(file, maxW = 1200, quality = 0.85) {
-  return new Promise(resolve => {
+function compressImage(file, maxW=1000, quality=0.80) {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
+    reader.onerror = () => reject(new Error('图片读取失败，请重试'));
     reader.onload = e => {
       const img = new Image();
+      img.onerror = () => reject(new Error('图片格式不支持，请用截图功能重拍'));
       img.onload = () => {
-        let w = img.width, h = img.height;
-        if (w > maxW) { h = Math.round(h * maxW / w); w = maxW; }
-        const canvas = document.createElement('canvas');
-        canvas.width = w; canvas.height = h;
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL('image/jpeg', quality));
+        try {
+          let w=img.width, h=img.height;
+          if (w>maxW) { h=Math.round(h*maxW/w); w=maxW; }
+          const c = document.createElement('canvas');
+          c.width=w; c.height=h;
+          c.getContext('2d').drawImage(img,0,0,w,h);
+          resolve(c.toDataURL('image/jpeg', quality));
+        } catch(err) { reject(new Error('图片压缩失败，请重试')); }
       };
       img.src = e.target.result;
     };
@@ -652,35 +952,48 @@ function compressImage(file, maxW = 1200, quality = 0.85) {
   });
 }
 
-// ─── AI 提交 ─────────────────────────────────────────────────
-async function submitScreenshot() {
+// ── Flow selector ────────────────────────────────────────────
+function submitScreenshot() {
   if (!S.selectedImages.length) { toast('请先选择截图'); return; }
+  document.getElementById('flow-custom-input').value = '';
+  document.getElementById('flow-selector-overlay').style.display = 'flex';
+}
+function closeFlowSelector(e) {
+  if (e.target === document.getElementById('flow-selector-overlay')) {
+    document.getElementById('flow-selector-overlay').style.display = 'none';
+  }
+}
+async function selectFlow(key, label) {
+  document.getElementById('flow-selector-overlay').style.display = 'none';
+  await doScreenshotAnalysis(key, label);
+}
+
+// ── AI submit ─────────────────────────────────────────────────
+async function doScreenshotAnalysis(flowKey, flowLabel) {
   const btn = document.getElementById('btn-ss-submit');
   const loading = document.getElementById('ss-loading');
-  btn.disabled = true;
-  loading.style.display = 'block';
+  btn.disabled=true; loading.style.display='block';
   document.getElementById('ai-result-area').innerHTML = '';
   try {
     const compressed = await Promise.all(S.selectedImages.map(f => compressImage(f)));
     const note = document.getElementById('ss-note').value.trim();
     const data = await api('/api/coach', {
-      method: 'POST',
-      body: { customerId: S.currentCustomerId, mode: 'screenshot', images: compressed, note },
+      method:'POST',
+      body:{
+        customerId: S.currentCustomerId,
+        mode: 'screenshot',
+        images: compressed,
+        note,
+        flow: flowKey,
+        flowLabel: flowLabel,
+      }
     });
-    // 显示 AI 建议卡片
-    showAIResult({ type: 'screenshot', ...data });
-    // 刷新历史
+    showAIResult({type:'screenshot', ...data});
     await loadThread(S.currentCustomerId);
-    // 清空输入
-    S.selectedImages = [];
-    renderImagePreviews();
-    document.getElementById('ss-note').value = '';
-  } catch (e) {
-    toast('分析失败：' + e.message);
-  } finally {
-    btn.disabled = false;
-    loading.style.display = 'none';
-  }
+    S.selectedImages=[]; renderImagePreviews();
+    document.getElementById('ss-note').value='';
+  } catch(e) { toast('分析失败：'+e.message); }
+  finally { btn.disabled=false; loading.style.display='none'; }
 }
 
 async function submitQuestion() {
@@ -688,98 +1001,404 @@ async function submitQuestion() {
   if (!question) { toast('请输入问题'); return; }
   const btn = document.getElementById('btn-qa-submit');
   const loading = document.getElementById('qa-loading');
-  btn.disabled = true;
-  loading.style.display = 'block';
-  document.getElementById('ai-result-area').innerHTML = '';
+  btn.disabled=true; loading.style.display='block';
+  document.getElementById('ai-result-area').innerHTML='';
   try {
-    const data = await api('/api/coach', {
-      method: 'POST',
-      body: { customerId: S.currentCustomerId, mode: 'qa', question },
-    });
-    showAIResult({ type: 'qa', ...data });
-    document.getElementById('qa-question').value = '';
-  } catch (e) {
-    toast('提问失败：' + e.message);
-  } finally {
-    btn.disabled = false;
-    loading.style.display = 'none';
-  }
+    const data = await api('/api/coach', {method:'POST', body:{customerId:S.currentCustomerId, mode:'qa', question}});
+    showAIResult({type:'qa', ...data});
+    document.getElementById('qa-question').value='';
+    // 刷新历史，让刚才的问答出现在对话记录里
+    await loadThread(S.currentCustomerId);
+  } catch(e) { toast('提问失败：'+e.message); }
+  finally { btn.disabled=false; loading.style.display='none'; }
 }
 
-// ─── AI 结果展示 ──────────────────────────────────────────────
+// ── AI result + typewriter ─────────────────────────────────────
 function showAIResult(data) {
   const area = document.getElementById('ai-result-area');
-  const text = data.type === 'screenshot' ? data.suggestion : data.answer;
-  const sub  = data.type === 'screenshot'
-    ? `<div class="ai-reasoning">💡 ${esc(data.reasoning || '')}</div>`
-    : (!data.answered ? '<div class="ai-reasoning">⚠️ 知识库覆盖不到，建议向主管确认</div>' : '');
+  const text = data.type==='screenshot' ? data.suggestion : data.answer;
+  const sub  = data.type==='screenshot'
+    ? `<div class="ai-reasoning">💡 ${esc(data.reasoning||'')}</div>`
+    : (!data.answered ? '<div class="ai-reasoning">⚠️ 知识库未能覆盖，建议向主管确认</div>' : '');
+  const productImg = data.product_image
+    ? `<div class="ai-product-img" onclick="window.open('${escAttr(data.product_image)}','_blank')">
+         <img src="${escAttr(data.product_image)}" alt="${escAttr(data.product_name||'')}">
+         <div class="ai-product-name">📦 ${esc(data.product_name||'')}</div>
+       </div>`
+    : '';
+  // Save for error report
+  S.lastAI = {
+    type: data.type,
+    response: text,
+    situation: data.situation_summary || '',
+    customerLabel: S.currentCustomer?.label || '',
+  };
   area.innerHTML = `
     <div class="ai-result-card">
-      <div class="ai-result-label">${data.type === 'screenshot' ? '📋 回复建议' : '💬 问题解答'}</div>
-      <div class="ai-suggestion-text" id="ai-text">${esc(text)}</div>
+      <div class="ai-suggestion-text typing" id="ai-text"></div>
       ${sub}
+      ${productImg}
       <button class="btn-copy" onclick="copyAI()">一键复制</button>
+      <button class="btn-report" onclick="openFeedbackModal()" style="display:block;width:100%;text-align:center;margin-top:8px">⚠️ 这个回复有问题</button>
     </div>`;
-  // 滚到 AI 结果顶部
-  area.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  area.scrollIntoView({behavior:'smooth', block:'start'});
+  typewrite(document.getElementById('ai-text'), text, 14);
+}
+
+function typewrite(el, text, speed) {
+  el.textContent = '';
+  el.classList.add('typing');
+  let i = 0;
+  const timer = setInterval(() => {
+    el.textContent += text[i];
+    i++;
+    if (i >= text.length) { clearInterval(timer); el.classList.remove('typing'); }
+  }, speed);
 }
 
 function copyAI() {
   const text = document.getElementById('ai-text').textContent;
   navigator.clipboard.writeText(text).then(() => toast('已复制！')).catch(() => {
-    // 降级方案
     const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    toast('已复制！');
+    ta.value=text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); toast('已复制！');
   });
 }
 
-// ─── UI HELPERS ───────────────────────────────────────────────
-function esc(s) {
-  return String(s || '')
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/\n/g, '<br>');
+// ── Feedback / Error report ───────────────────────────────────
+function openFeedbackModal() {
+  const preview = (S.lastAI?.response || '').slice(0, 120) + (S.lastAI?.response?.length > 120 ? '...' : '');
+  document.getElementById('feedback-preview').textContent = preview;
+  document.getElementById('feedback-note').value = '';
+  document.getElementById('modal-feedback').classList.add('open');
+  setTimeout(() => document.getElementById('feedback-note').focus(), 100);
+}
+function closeFeedbackModal(e) {
+  if (!e || e.target === document.getElementById('modal-feedback'))
+    document.getElementById('modal-feedback').classList.remove('open');
+}
+async function submitFeedback() {
+  const note = document.getElementById('feedback-note').value.trim();
+  if (!note) { toast('请写明哪里有问题'); return; }
+  try {
+    await api('/api/feedback', {
+      method: 'POST',
+      body: {
+        ai_type:        S.lastAI?.type,
+        ai_response:    S.lastAI?.response || '',
+        situation:      S.lastAI?.situation || '',
+        customer_label: S.lastAI?.customerLabel || '',
+        feedback_note:  note,
+      }
+    });
+    closeFeedbackModal();
+    toast('报错已提交，主管会跟进 ✓');
+  } catch(e) { toast('提交失败：' + e.message); }
 }
 
+// ── Quick Ask (list page, no customer context) ────────────────
+async function submitQuickAsk() {
+  const input = document.getElementById('qa-input');
+  const question = input.value.trim();
+  if (!question) return;
+
+  const btn = document.getElementById('qa-btn');
+  btn.disabled = true; btn.textContent = '…';
+
+  const respEl  = document.getElementById('qa-response');
+  const textEl  = document.getElementById('qa-response-text');
+  const copyWrap = document.getElementById('qa-copy-wrap');
+  respEl.classList.remove('show');
+  copyWrap.style.display = 'none';
+  textEl.textContent = '';
+
+  try {
+    const data = await api('/api/coach', {
+      method: 'POST',
+      body: { mode: 'qa', question },
+    });
+    respEl.classList.add('show');
+    copyWrap.style.display = 'flex';
+    typewrite(textEl, data.answer, 12);
+    input.value = '';
+    if (!data.answered) {
+      setTimeout(() => {
+        textEl.textContent += '\n\n⚠️ 知识库未完全覆盖，建议向主管确认';
+      }, data.answer.length * 12 + 100);
+    }
+  } catch (e) {
+    toast('提问失败：' + e.message);
+  } finally {
+    btn.disabled = false; btn.textContent = '↑';
+  }
+}
+function copyQuickAsk() {
+  const text = document.getElementById('qa-response-text').textContent;
+  navigator.clipboard.writeText(text).then(() => toast('已复制！')).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand('copy'); document.body.removeChild(ta); toast('已复制！');
+  });
+}
+
+// ── Long press to delete from list ────────────────────────────
+let _lpTimer = null;
+let _lpFired  = false;
+let _deleteTarget = null;
+
+function addCardLongPress(el, customer) {
+  el.addEventListener('touchstart', () => {
+    _lpFired = false;
+    _lpTimer = setTimeout(() => {
+      _lpFired = true;
+      el.classList.add('pressing');
+      if (navigator.vibrate) navigator.vibrate(30);
+      openDeleteModal(customer);
+    }, 500);
+  }, { passive: true });
+  const cancel = () => {
+    clearTimeout(_lpTimer);
+    el.classList.remove('pressing');
+  };
+  el.addEventListener('touchend', cancel);
+  el.addEventListener('touchmove', cancel);
+  el.addEventListener('touchcancel', cancel);
+  // Block iOS context menu (Copy/Look Up/Translate) on long press
+  el.addEventListener('contextmenu', e => e.preventDefault());
+  // Prevent the click from firing if long press was triggered
+  el.addEventListener('click', e => {
+    if (_lpFired) { _lpFired = false; e.stopImmediatePropagation(); }
+  }, true);
+}
+
+function openDeleteModal(customer) {
+  _deleteTarget = customer;
+  document.getElementById('delete-modal-msg').innerHTML =
+    `确定要删除「<strong>${esc(customer.label)}</strong>」吗？<br><br>可在右上角 🗑️ <strong>回收站</strong>找回，互动记录完整保留。`;
+  document.getElementById('modal-delete').classList.add('open');
+}
+function closeDeleteModal(e) {
+  if (!e || e.target === document.getElementById('modal-delete')) {
+    document.getElementById('modal-delete').classList.remove('open');
+    document.querySelectorAll('.customer-card.pressing').forEach(c => c.classList.remove('pressing'));
+  }
+}
+async function doSoftDelete() {
+  if (!_deleteTarget) return;
+  const { id, label } = _deleteTarget;
+  try {
+    await api('/api/data?action=delete-customer', { method: 'POST', body: { id } });
+    S.customers = S.customers.filter(c => c.id !== id);
+    document.getElementById('modal-delete').classList.remove('open');
+    renderList();
+    toast(`「${label}」已移至回收站 ✓`);
+  } catch (e) { toast(e.message); }
+  _deleteTarget = null;
+}
+
+// ── Trash modal ───────────────────────────────────────────────
+async function openTrashModal() {
+  const el = document.getElementById('trash-list');
+  el.innerHTML = '<div class="loading-dots" style="padding:32px 0"><span></span><span></span><span></span></div>';
+  document.getElementById('modal-trash').classList.add('open');
+  try {
+    const data = await api('/api/data?action=trash');
+    renderTrash(data.customers || []);
+  } catch (e) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--sub)">加载失败，请重试</div>';
+  }
+}
+function closeTrashModal(e) {
+  if (!e || e.target === document.getElementById('modal-trash'))
+    document.getElementById('modal-trash').classList.remove('open');
+}
+
+// ── Products modal ───────────────────────────────────────────
+let _productsCache = [];
+let _productViewUrl = null;
+async function openProductsModal() {
+  const el = document.getElementById('products-grid');
+  el.innerHTML = '<div class="loading-dots" style="padding:32px 0"><span></span><span></span><span></span></div>';
+  document.getElementById('modal-products').classList.add('open');
+  try {
+    const data = await api('/api/products');
+    _productsCache = data.products || [];
+    renderProducts();
+  } catch (e) {
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--sub)">加载失败，请重试</div>';
+  }
+}
+function closeProductsModal(e) {
+  if (!e || e.target === document.getElementById('modal-products'))
+    document.getElementById('modal-products').classList.remove('open');
+}
+function renderProducts() {
+  const el = document.getElementById('products-grid');
+  if (!_productsCache.length) {
+    el.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:36px 20px"><div class="empty-icon">📦</div><div class="empty-title">还没有产品图片</div></div>';
+    return;
+  }
+  el.innerHTML = _productsCache.map(p => `
+    <div style="cursor:pointer" onclick="openProductView('${p.id}')">
+      <img src="${escAttr(p.image_url)}" alt="${escAttr(p.name)}"
+           style="width:100%;height:100px;object-fit:cover;border-radius:12px;background:var(--surf)"
+           onerror="this.style.opacity=0.2">
+      <div style="font-size:12px;font-weight:600;margin-top:5px;line-height:1.3">${esc(p.name)}</div>
+    </div>`).join('');
+}
+function openProductView(id) {
+  const p = _productsCache.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('product-view-img').src = p.image_url;
+  document.getElementById('product-view-name').textContent = p.name;
+  const linkBtn = document.getElementById('product-view-link');
+  if (p.product_url) { _productViewUrl = p.product_url; linkBtn.style.display = ''; }
+  else { _productViewUrl = null; linkBtn.style.display = 'none'; }
+  document.getElementById('modal-product-view').classList.add('open');
+}
+function closeProductView(e) {
+  if (!e || e.target === document.getElementById('modal-product-view'))
+    document.getElementById('modal-product-view').classList.remove('open');
+}
+function copyProductLink() {
+  if (!_productViewUrl) return;
+  navigator.clipboard.writeText(_productViewUrl).then(() => toast('已复制！')).catch(() => {});
+}
+function renderTrash(list) {
+  const el = document.getElementById('trash-list');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:36px 20px"><div class="empty-icon">✅</div><div class="empty-title">回收站是空的</div><div style="font-size:13px;margin-top:6px">长按客户卡片可删除</div></div>';
+    return;
+  }
+  el.innerHTML = list.map(c => `
+    <div class="trash-card" id="tc-${c.id}" data-label="${escAttr(c.label)}">
+      ${avatarHTML(c.label, 44)}
+      <div class="trash-card-info">
+        <div class="trash-card-label">${esc(c.label)}</div>
+        <div class="trash-card-time">删除于 ${timeAgo(c.deleted_at)}</div>
+      </div>
+      <div class="trash-actions">
+        <button class="btn-restore" onclick="restoreCustomer('${c.id}')">还原</button>
+        <button class="btn-purge"   onclick="purgeCustomer('${c.id}')">永久删除</button>
+      </div>
+    </div>`).join('');
+}
+async function restoreCustomer(id) {
+  const card = document.getElementById('tc-' + id);
+  const label = card?.dataset.label || '此客户';
+  try {
+    const data = await api('/api/data?action=restore-customer', { method: 'POST', body: { id } });
+    S.customers.unshift(data.customer);
+    if (card) { card.style.opacity = '0'; setTimeout(() => card.remove(), 300); }
+    renderList();
+    toast(`「${label}」已还原 ✓`);
+  } catch (e) { toast(e.message); }
+}
+async function purgeCustomer(id) {
+  const card = document.getElementById('tc-' + id);
+  const label = card?.dataset.label || '此客户';
+  if (!confirm(`永久删除「${label}」？互动记录也会删除，无法恢复。`)) return;
+  try {
+    await api('/api/data?action=purge-customer', { method: 'POST', body: { id } });
+    if (card) { card.style.opacity = '0'; setTimeout(() => card.remove(), 300); }
+    toast('已永久删除');
+  } catch (e) { toast(e.message); }
+}
+
+// ── Helpers ───────────────────────────────────────────────────
+function escAttr(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+}
+function esc(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
 function timeAgo(isoStr) {
   if (!isoStr) return '';
   const diff = Date.now() - new Date(isoStr).getTime();
-  const m = Math.floor(diff / 60000);
-  if (m < 1)   return '刚刚';
-  if (m < 60)  return `${m} 分钟前`;
-  const h = Math.floor(m / 60);
-  if (h < 24)  return `${h} 小时前`;
-  const d = Math.floor(h / 24);
-  if (d === 1) return '昨天';
-  if (d < 7)   return `${d} 天前`;
-  return new Date(isoStr).toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' });
+  const m = Math.floor(diff/60000);
+  if (m<1)  return '刚刚';
+  if (m<60) return `${m} 分钟前`;
+  const h = Math.floor(m/60);
+  if (h<24) return `${h} 小时前`;
+  const d = Math.floor(h/24);
+  if (d===1) return '昨天';
+  if (d<7)  return `${d} 天前`;
+  return new Date(isoStr).toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'});
 }
-
 function formatDate(isoStr) {
   const d = new Date(isoStr);
-  return d.toLocaleDateString('zh-CN', { month: 'numeric', day: 'numeric' }) +
-    ' ' + d.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'}) + ' ' +
+    d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
 }
 
 let toastTimer;
 function toast(msg) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
+  el.textContent=msg; el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 2200);
 }
 
-// ─── INIT ─────────────────────────────────────────────────────
-document.getElementById('login-pin').addEventListener('keydown', e => {
-  if (e.key === 'Enter') doLogin();
-});
-
+// ── Init ──────────────────────────────────────────────────────
+document.getElementById('login-pin').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
+document.addEventListener('click', closeMenu);
 init();
 </script>
+
+<!-- ─── Flow Selector Overlay ──────────────────────────────── -->
+<div id="flow-selector-overlay" onclick="closeFlowSelector(event)">
+  <div class="flow-sel-card" onclick="event.stopPropagation()">
+    <div class="flow-sel-title">顾客目前在哪个阶段？</div>
+
+    <div class="flow-opt" onclick="selectFlow('flow1','Flow 1 — 首次接触，发资料中')">
+      <div class="flow-num">1</div>
+      <div class="flow-txt">
+        <div class="flow-name">Flow 1</div>
+        <div class="flow-desc">首次接触顾客，发 promotion 资料，建立兴趣</div>
+      </div>
+    </div>
+
+    <div class="flow-opt" onclick="selectFlow('flow2','Flow 2 — 有兴趣，处理问题中')">
+      <div class="flow-num">2</div>
+      <div class="flow-txt">
+        <div class="flow-name">Flow 2</div>
+        <div class="flow-desc">顾客看了资料有兴趣，处理问题，引导申请</div>
+      </div>
+    </div>
+
+    <div class="flow-opt" onclick="selectFlow('flow3','Flow 3 — 处理最后疑虑，引导下单')">
+      <div class="flow-num">3</div>
+      <div class="flow-txt">
+        <div class="flow-name">Flow 3</div>
+        <div class="flow-desc">处理最后异议，准备 1-2 分钟申请</div>
+      </div>
+    </div>
+
+    <div class="flow-opt" onclick="selectFlow('quality','Quality 跟进 — 顾客已 quality，发了但没回复')">
+      <div class="flow-num">4</div>
+      <div class="flow-txt">
+        <div class="flow-name">Quality 跟进</div>
+        <div class="flow-desc">顾客 quality 了，发了 follow up 但没有回复</div>
+      </div>
+    </div>
+
+    <div class="flow-opt" onclick="selectFlow('daily','Daily 跟进 — Day 1-3 日常跟进')">
+      <div class="flow-num">5</div>
+      <div class="flow-txt">
+        <div class="flow-name">Daily 跟进</div>
+        <div class="flow-desc">Day 1-3 每日跟进，未成交顾客维系</div>
+      </div>
+    </div>
+
+    <div class="flow-skip-row">
+      <input class="flow-skip-input" id="flow-custom-input"
+             placeholder="Or describe the situation..."
+             onkeydown="if(event.key==='Enter'&&this.value.trim())selectFlow('custom',this.value.trim())">
+      <button class="flow-skip-btn" onclick="selectFlow('skip','')">Skip</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -38,7 +38,8 @@
 | `SUPABASE_URL` | Supabase 项目 URL |
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key（后端专用，绝不暴露前端） |
 | `ANTHROPIC_API_KEY` | Claude API key（绝不暴露前端） |
-| `MANAGER_PASSWORD` | manager.html 登录密码（下一 PART 用到） |
+
+Manager 登录已改为 `managers` 表里的独立账号（见 `sql/2026-08-add-on.sql`），不再用共享的 `MANAGER_PASSWORD` 环境变量。
 
 ## 部署步骤
 

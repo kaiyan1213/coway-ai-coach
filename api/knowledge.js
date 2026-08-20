@@ -1,7 +1,7 @@
 'use strict';
 // api/knowledge.js — 知识库管理（Manager 专用）
 //
-// 所有请求需带 Authorization: Bearer <MANAGER_PASSWORD>
+// 所有请求需带 Authorization: Bearer <manager token>（登录 /api/auth?mgr=1 拿到）
 //
 // GET  /api/knowledge                    → 列出所有知识条目
 // POST /api/knowledge?action=add         → 新增一条知识
@@ -13,6 +13,7 @@ const ALLOWED_CATEGORIES = ['价格_Pricelist', 'Promotion_Memo', '产品知识'
 // ─────────────────────────────────────────────────────────────────────────────
 
 const { createClient } = require('@supabase/supabase-js');
+const { authManager }  = require('../lib/managerAuth');
 
 function supabase() {
   return createClient(
@@ -21,19 +22,12 @@ function supabase() {
   );
 }
 
-// Manager 用 MANAGER_PASSWORD 作为 Bearer token
-function authManager(req) {
-  const header = req.headers['authorization'] || '';
-  const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
-  return token === process.env.MANAGER_PASSWORD;
-}
-
 module.exports = async (req, res) => {
-  if (!authManager(req)) {
-    return res.status(401).json({ error: '无权限，需要 Manager 密码' });
+  const db = supabase();
+  if (!(await authManager(req, db))) {
+    return res.status(401).json({ error: '无权限，需要 Manager 登录' });
   }
 
-  const db = supabase();
   const { action } = req.query;
 
   // GET — 列出知识库

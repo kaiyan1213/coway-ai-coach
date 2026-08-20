@@ -2,93 +2,598 @@
 <html lang="zh">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <meta name="theme-color" content="#00a7e1">
   <title>Coway AI Coach — Manager</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #F3F4F6; min-height: 100vh;
-      display: flex; align-items: center; justify-content: center;
+    :root{
+      --p:#00a7e1;--p-dk:#0087b8;--p-bg:#dff4fb;--p-tx:#00607f;
+      --r:#EF4444;--r-bg:#FEE2E2;--r-tx:#991B1B;
+      --g:#10B981;--g-bg:#D1FAE5;--g-tx:#065F46;
+      --bg:#EDF2F7;--card:#fff;--bdr:#E2E8F0;--text:#0F172A;--sub:#64748B;--surf:#F8FAFC;
     }
-    .card {
-      background: #fff; border-radius: 16px; padding: 32px 28px;
-      width: 100%; max-width: 360px; box-shadow: 0 4px 24px rgba(0,0,0,.08);
-    }
-    h1 { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-    p.sub { color: #6B7280; font-size: 14px; margin-bottom: 24px; }
-    input {
-      width: 100%; padding: 12px 14px; border: 1.5px solid #E5E7EB;
-      border-radius: 10px; font-size: 16px; outline: none; margin-bottom: 12px;
-    }
-    input:focus { border-color: #6366F1; }
-    button {
-      width: 100%; padding: 13px; background: #6366F1; color: #fff;
-      border: none; border-radius: 10px; font-size: 16px; font-weight: 600;
-      cursor: pointer; margin-top: 4px;
-    }
-    button:hover { background: #4F46E5; }
-    #error { color: #EF4444; font-size: 14px; margin-top: 10px; display: none; }
-    #coming-soon {
-      display: none; text-align: center; padding: 40px 0;
-      color: #6B7280; font-size: 15px;
-    }
-    #coming-soon strong { display: block; font-size: 22px; margin-bottom: 8px; color: #111827; }
+    *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);font-size:15px;-webkit-font-smoothing:antialiased}
+    button{cursor:pointer;font-family:inherit}
+    input,textarea,select{font-family:inherit;outline:none}
+
+    /* ── Login ── */
+    #view-login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px 20px;background:linear-gradient(145deg,#b8e7f7,#edf2f7)}
+    .login-card{background:var(--card);border-radius:28px;padding:36px 26px 30px;width:100%;max-width:360px;box-shadow:0 8px 32px rgba(0,167,225,.16)}
+    .login-logo{display:flex;justify-content:center;margin-bottom:8px}
+    .login-logo img{height:34px;object-fit:contain}
+    .login-tagline{text-align:center;font-size:13px;color:var(--sub);margin-bottom:28px;font-weight:500}
+    .lbl{font-size:11px;font-weight:700;color:var(--sub);margin-bottom:6px;letter-spacing:.6px;text-transform:uppercase}
+    .login-input,.login-select{width:100%;padding:13px 14px;border:1.5px solid var(--bdr);border-radius:12px;font-size:15px;background:var(--surf);color:var(--text);margin-bottom:14px}
+    .login-input:focus,.login-select:focus{border-color:var(--p)}
+    .btn-login{width:100%;padding:14px;background:linear-gradient(135deg,#00bef5,#0095cc);color:#fff;border:none;border-radius:13px;font-size:16px;font-weight:800;box-shadow:0 4px 14px rgba(0,167,225,.4);transition:opacity .15s,transform .1s}
+    .btn-login:active{opacity:.88;transform:scale(.98)}
+    #login-error{color:var(--r);font-size:13px;margin-top:10px;display:none;text-align:center}
+
+    /* ── Dashboard ── */
+    #view-dash{display:none;flex-direction:column;min-height:100vh}
+    .dash-header{background:var(--card);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    .dash-header img{height:24px;object-fit:contain}
+    .dash-header-right{display:flex;align-items:center;gap:10px}
+    .mgr-badge{font-size:12px;font-weight:700;color:var(--p-tx);background:var(--p-bg);padding:4px 10px;border-radius:12px}
+    .btn-logout{background:var(--surf);border:1.5px solid var(--bdr);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--sub)}
+    .dash-tabs{display:flex;gap:0;background:var(--card);border-bottom:1px solid var(--bdr);padding:0 16px;overflow-x:auto}
+    .dash-tab{padding:12px 16px;font-size:14px;font-weight:600;color:var(--sub);border:none;background:none;border-bottom:2.5px solid transparent;transition:all .15s;white-space:nowrap}
+    .dash-tab.active{color:var(--p);border-bottom-color:var(--p)}
+    .dash-body{flex:1;padding:14px 12px}
+
+    /* ── Feedback card ── */
+    .fb-card{background:var(--card);border-radius:16px;padding:15px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:4px solid var(--r)}
+    .fb-card.resolved{border-left-color:#D1D5DB;opacity:.7}
+    .fb-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:4px}
+    .fb-staff{font-size:13px;font-weight:700;color:var(--text)}
+    .fb-time{font-size:11px;color:var(--sub)}
+    .fb-customer{font-size:12px;color:var(--sub);margin-bottom:6px}
+    .fb-type{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:var(--p-bg);color:var(--p-tx);margin-bottom:8px}
+    .fb-label{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+    .fb-response{font-size:13px;color:var(--sub);line-height:1.5;background:var(--surf);border-radius:8px;padding:8px 10px;margin-bottom:8px;max-height:72px;overflow:hidden;position:relative}
+    .fb-response::after{content:'';position:absolute;bottom:0;left:0;right:0;height:24px;background:linear-gradient(transparent,var(--surf))}
+    .fb-note{font-size:14px;color:var(--text);line-height:1.55;margin-bottom:10px;font-weight:500}
+    .btn-resolve{background:linear-gradient(135deg,#10B981,#059669);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(16,185,129,.3);transition:opacity .15s}
+    .btn-resolve:active{opacity:.85}
+    .resolved-badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--g-tx);background:var(--g-bg);padding:4px 10px;border-radius:10px}
+    .empty-state{text-align:center;padding:60px 20px;color:var(--sub)}
+    .empty-icon{font-size:44px;margin-bottom:14px}
+    .empty-title{font-weight:700;font-size:16px;color:var(--text);margin-bottom:6px}
+
+    /* Summary bar */
+    .summary-bar{background:var(--card);border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;gap:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .summary-item{text-align:center;flex:1}
+    .summary-num{font-size:24px;font-weight:900;color:var(--text)}
+    .summary-lbl{font-size:11px;color:var(--sub);font-weight:600;margin-top:2px}
+    .summary-num.red{color:var(--r)}
+    .summary-num.green{color:var(--g)}
+
+    /* ── Form card (add staff / add product) ── */
+    .form-card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .form-title{font-size:14px;font-weight:800;margin-bottom:12px}
+    .form-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+    .form-input{flex:1;min-width:100px;padding:11px 12px;border:1.5px solid var(--bdr);border-radius:10px;font-size:14px;background:var(--surf);color:var(--text)}
+    .form-input:focus{border-color:var(--p)}
+    .btn-primary{background:linear-gradient(135deg,#00bef5,#0095cc);color:#fff;border:none;border-radius:10px;padding:11px 18px;font-size:14px;font-weight:700;box-shadow:0 2px 8px rgba(0,167,225,.3)}
+    .btn-primary:active{opacity:.88}
+    .hint{font-size:12px;color:var(--sub);margin-bottom:10px}
+
+    /* ── Staff card ── */
+    .staff-card{background:var(--card);border-radius:14px;padding:13px 16px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;align-items:center;gap:12px}
+    .staff-card.inactive{opacity:.55}
+    .staff-info{flex:1;min-width:0}
+    .staff-name{font-weight:700;font-size:14px}
+    .staff-sub{font-size:12px;color:var(--sub);margin-top:2px}
+    .staff-actions{display:flex;gap:6px}
+    .icon-btn{background:var(--surf);border:1.5px solid var(--bdr);border-radius:10px;width:34px;height:34px;font-size:14px;flex-shrink:0}
+    .icon-btn:active{opacity:.8}
+    .icon-btn.danger{color:var(--r);border-color:var(--r-bg)}
+
+    /* ── Product grid ── */
+    .product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+    .product-card{background:var(--card);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+    .product-card.inactive{opacity:.5}
+    .product-card img{width:100%;height:110px;object-fit:cover;background:var(--surf)}
+    .product-body{padding:10px}
+    .product-name{font-size:13px;font-weight:700;margin-bottom:8px;line-height:1.3}
+    .product-actions{display:flex;gap:6px}
+
+    /* ── Inline edit form ── */
+    .edit-mask{position:fixed;inset:0;background:rgba(15,23,42,.45);display:none;align-items:flex-end;justify-content:center;z-index:200}
+    .edit-mask.open{display:flex}
+    .edit-sheet{background:var(--card);border-radius:22px 22px 0 0;padding:22px 20px 28px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto}
+    .edit-title{font-size:16px;font-weight:800;margin-bottom:16px}
+    .btn-row{display:flex;gap:10px;margin-top:16px}
+    .btn-cancel{flex:1;background:var(--surf);border:1.5px solid var(--bdr);border-radius:12px;padding:12px;font-size:14px;font-weight:700;color:var(--sub)}
+    .btn-save{flex:1;background:linear-gradient(135deg,#00bef5,#0095cc);color:#fff;border:none;border-radius:12px;padding:12px;font-size:14px;font-weight:700}
+    .check-row{display:flex;align-items:center;gap:8px;margin:10px 0;font-size:14px;font-weight:600}
   </style>
 </head>
 <body>
-  <div class="card">
-    <div id="login-area">
-      <h1>Manager 登录</h1>
-      <p class="sub">Coway AI Coach 管理后台</p>
-      <input id="pwd" type="password" placeholder="Manager 密码" autocomplete="current-password">
-      <button onclick="login()">登录</button>
-      <p id="error">密码错误，请重试</p>
-    </div>
 
-    <div id="coming-soon">
-      <strong>即将推出</strong>
-      Manager 看板功能将在下一个版本上线，<br>
-      包括：知识库管理、团队跟进看板、QA 日志审阅。
-      <br><br>
-      <button onclick="logout()" style="width:auto;padding:8px 20px;background:#6B7280;font-size:14px;">退出</button>
+<!-- ─── Login ─────────────────────────────────────────────── -->
+<div id="view-login">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="/coway-logo.png" alt="Coway">
+    </div>
+    <div class="login-tagline">Manager 管理后台</div>
+    <div class="lbl">Manager</div>
+    <select id="mgr-name" class="login-select"><option value="">加载中...</option></select>
+    <div class="lbl">密码</div>
+    <input id="pwd" class="login-input" type="password" placeholder="输入密码" autocomplete="current-password">
+    <button class="btn-login" onclick="login()">登录</button>
+    <div id="login-error">登录失败，请重试</div>
+  </div>
+</div>
+
+<!-- ─── Dashboard ─────────────────────────────────────────── -->
+<div id="view-dash">
+  <div class="dash-header">
+    <img src="/coway-logo.png" alt="Coway">
+    <div class="dash-header-right">
+      <span class="mgr-badge" id="mgr-badge"></span>
+      <button class="btn-logout" onclick="logout()">退出</button>
     </div>
   </div>
 
-  <script>
-    // 检查是否已登录
-    if (sessionStorage.getItem('mgr_ok') === '1') showDashboard();
+  <div class="dash-tabs">
+    <button class="dash-tab active" id="tab-pending"  onclick="switchTab('pending')">待处理报错</button>
+    <button class="dash-tab"        id="tab-resolved" onclick="switchTab('resolved')">已处理</button>
+    <button class="dash-tab"        id="tab-account"  onclick="switchTab('account')">账号</button>
+    <button class="dash-tab"        id="tab-products" onclick="switchTab('products')">产品</button>
+  </div>
 
-    async function login() {
-      const pwd = document.getElementById('pwd').value;
-      // 密码在 server 端验证（通过 api/auth 的 manager 端点）
-      // 目前直接用环境变量值做比对已经不安全，这里改为调用后端
-      const res = await fetch('/api/auth?mgr=1', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ manager_password: pwd }),
-      });
-      if (res.ok) {
-        sessionStorage.setItem('mgr_ok', '1');
-        showDashboard();
-      } else {
-        document.getElementById('error').style.display = 'block';
-      }
-    }
+  <div class="dash-body">
+    <!-- Feedback tabs -->
+    <div id="panel-feedback">
+      <div class="summary-bar" id="summary-bar" style="display:none">
+        <div class="summary-item">
+          <div class="summary-num red" id="sum-pending">—</div>
+          <div class="summary-lbl">待处理</div>
+        </div>
+        <div class="summary-item">
+          <div class="summary-num green" id="sum-resolved">—</div>
+          <div class="summary-lbl">已处理</div>
+        </div>
+      </div>
+      <div id="feedback-list"></div>
+    </div>
 
-    function logout() {
-      sessionStorage.removeItem('mgr_ok');
-      location.reload();
-    }
+    <!-- Account tab -->
+    <div id="panel-account" style="display:none">
+      <div class="form-card">
+        <div class="form-title">➕ 新增员工</div>
+        <div class="form-row">
+          <input id="new-staff-name" class="form-input" placeholder="姓名">
+          <input id="new-staff-pin" class="form-input" placeholder="PIN">
+          <input id="new-staff-team" class="form-input" placeholder="Team">
+        </div>
+        <div class="hint" id="team-scope-hint" style="display:none"></div>
+        <button class="btn-primary" onclick="addStaff()">新增</button>
+      </div>
+      <div id="staff-list"></div>
+    </div>
 
-    function showDashboard() {
-      document.getElementById('login-area').style.display = 'none';
-      document.getElementById('coming-soon').style.display = 'block';
-    }
+    <!-- Products tab -->
+    <div id="panel-products" style="display:none">
+      <div class="form-card">
+        <div class="form-title">➕ 新增产品</div>
+        <div class="form-row">
+          <input id="new-prod-name" class="form-input" placeholder="产品名字（建议跟知识库 product 一致）">
+        </div>
+        <div class="form-row">
+          <input id="new-prod-image" class="form-input" placeholder="图片链接（coway.com.my）">
+        </div>
+        <div class="form-row">
+          <input id="new-prod-url" class="form-input" placeholder="产品页链接（选填）">
+        </div>
+        <button class="btn-primary" onclick="addProduct()">新增</button>
+      </div>
+      <div class="product-grid" id="product-grid"></div>
+    </div>
+  </div>
+</div>
 
-    document.getElementById('pwd').addEventListener('keydown', e => {
-      if (e.key === 'Enter') login();
+<!-- ─── Edit staff sheet ──────────────────────────────────── -->
+<div class="edit-mask" id="edit-staff-mask" onclick="closeEditStaff(event)">
+  <div class="edit-sheet">
+    <div class="edit-title">编辑员工</div>
+    <div class="lbl">姓名</div>
+    <input id="edit-staff-name" class="form-input login-input" style="margin-bottom:10px">
+    <div class="lbl">PIN</div>
+    <input id="edit-staff-pin" class="form-input login-input" style="margin-bottom:10px">
+    <div class="lbl">Team</div>
+    <input id="edit-staff-team" class="form-input login-input" style="margin-bottom:0">
+    <label class="check-row"><input type="checkbox" id="edit-staff-active"> 在职</label>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeEditStaff()">取消</button>
+      <button class="btn-save" onclick="saveStaff()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Edit product sheet ────────────────────────────────── -->
+<div class="edit-mask" id="edit-prod-mask" onclick="closeEditProduct(event)">
+  <div class="edit-sheet">
+    <div class="edit-title">编辑产品</div>
+    <div class="lbl">产品名字</div>
+    <input id="edit-prod-name" class="form-input login-input" style="margin-bottom:10px">
+    <div class="lbl">图片链接</div>
+    <input id="edit-prod-image" class="form-input login-input" style="margin-bottom:10px">
+    <div class="lbl">产品页链接</div>
+    <input id="edit-prod-url" class="form-input login-input" style="margin-bottom:0">
+    <label class="check-row"><input type="checkbox" id="edit-prod-active"> 上架中</label>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeEditProduct()">取消</button>
+      <button class="btn-save" onclick="saveProduct()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let MGR_TOKEN = null;
+let MGR_TEAM  = null;
+let MGR_NAME  = null;
+let currentTab = 'pending';
+let counts = { pending: 0, resolved: 0 };
+let staffCache = [];
+let productCache = [];
+let editStaffId = null;
+let editProdId = null;
+
+// ── Auth ──────────────────────────────────────────────────────
+async function loadManagerNames() {
+  const sel = document.getElementById('mgr-name');
+  try {
+    const res = await fetch('/api/auth?mgr=1');
+    const data = await res.json();
+    const names = data.managers || [];
+    sel.innerHTML = names.length
+      ? names.map(m => `<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('')
+      : `<option value="">暂无 Manager 账号</option>`;
+  } catch {
+    sel.innerHTML = `<option value="">加载失败</option>`;
+  }
+}
+
+async function login() {
+  const name = document.getElementById('mgr-name').value;
+  const pwd = document.getElementById('pwd').value.trim();
+  if (!name || !pwd) return;
+  document.getElementById('login-error').style.display = 'none';
+  try {
+    const res = await fetch('/api/auth?mgr=1', {
+      method: 'POST', headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({ name, password: pwd }),
     });
-  </script>
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'wrong');
+    MGR_TOKEN = data.token; MGR_TEAM = data.team; MGR_NAME = data.managerName;
+    sessionStorage.setItem('mgr_session', JSON.stringify({ token: MGR_TOKEN, team: MGR_TEAM, name: MGR_NAME }));
+    showDash();
+  } catch (e) {
+    document.getElementById('login-error').textContent = e.message === 'wrong' ? '登录失败，请重试' : e.message;
+    document.getElementById('login-error').style.display = 'block';
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('mgr_session');
+  MGR_TOKEN = null; MGR_TEAM = null; MGR_NAME = null;
+  document.getElementById('view-dash').style.display = 'none';
+  document.getElementById('view-login').style.display = 'flex';
+  loadManagerNames();
+}
+
+function showDash() {
+  document.getElementById('view-login').style.display = 'none';
+  document.getElementById('view-dash').style.display = 'flex';
+  document.getElementById('mgr-badge').textContent = MGR_NAME + (MGR_TEAM ? ` · ${MGR_TEAM}` : ' · 全部Team');
+  const hint = document.getElementById('team-scope-hint');
+  if (MGR_TEAM) {
+    document.getElementById('new-staff-team').value = MGR_TEAM;
+    document.getElementById('new-staff-team').disabled = true;
+    hint.style.display = 'block';
+    hint.textContent = `你只能管理 ${MGR_TEAM} 的员工`;
+  }
+  loadFeedback('pending');
+  loadFeedback('resolved');
+}
+
+function mgrHeaders() {
+  return { 'Content-Type': 'application/json', Authorization: 'Bearer ' + MGR_TOKEN };
+}
+
+// ── Tab ───────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  ['pending','resolved','account','products'].forEach(t =>
+    document.getElementById('tab-'+t).classList.toggle('active', t===tab));
+  document.getElementById('panel-feedback').style.display = (tab==='pending'||tab==='resolved') ? '' : 'none';
+  document.getElementById('panel-account').style.display  = tab==='account'  ? '' : 'none';
+  document.getElementById('panel-products').style.display = tab==='products' ? '' : 'none';
+
+  if (tab === 'pending' || tab === 'resolved') loadFeedback(tab);
+  if (tab === 'account') loadStaff();
+  if (tab === 'products') loadProducts();
+}
+
+// ── Load feedback ─────────────────────────────────────────────
+async function loadFeedback(tab) {
+  const resolved = tab === 'resolved' ? '1' : '0';
+  try {
+    const res = await fetch(`/api/feedback?resolved=${resolved}`, {
+      headers: { Authorization: 'Bearer ' + MGR_TOKEN }
+    });
+    const data = await res.json();
+    const list = data.feedback || [];
+
+    if (tab === 'pending')  { counts.pending  = list.length; document.getElementById('sum-pending').textContent  = list.length; }
+    if (tab === 'resolved') { counts.resolved = list.length; document.getElementById('sum-resolved').textContent = list.length; }
+    document.getElementById('summary-bar').style.display = 'flex';
+
+    if (tab !== currentTab) return; // don't render if user already switched
+
+    renderFeedback(list, tab);
+  } catch(e) {
+    if (tab === currentTab) {
+      document.getElementById('feedback-list').innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div>加载失败，请刷新</div></div>`;
+    }
+  }
+}
+
+function renderFeedback(list, tab) {
+  const el = document.getElementById('feedback-list');
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">${tab==='pending'?'✅':'📋'}</div>
+      <div class="empty-title">${tab==='pending'?'暂无待处理报错':'暂无已处理记录'}</div>
+    </div>`;
+    return;
+  }
+  el.innerHTML = list.map(f => `
+    <div class="fb-card ${f.resolved?'resolved':''}" id="fb-${f.id}">
+      <div class="fb-meta">
+        <span class="fb-staff">👤 ${esc(f.staff_name)}</span>
+        <span class="fb-time">${fmtDate(f.created_at)}</span>
+      </div>
+      ${f.customer_label ? `<div class="fb-customer">客户：${esc(f.customer_label)}</div>` : ''}
+      <span class="fb-type">${f.ai_type==='screenshot'?'📋 截图分析':'💬 问题解答'}</span>
+      <div class="fb-label">AI 回复内容</div>
+      <div class="fb-response">${esc(f.ai_response)}</div>
+      <div class="fb-label">Staff 反映的问题</div>
+      <div class="fb-note">${esc(f.feedback_note)}</div>
+      ${f.resolved
+        ? `<span class="resolved-badge">✓ 已处理</span>`
+        : `<button class="btn-resolve" onclick="resolve('${f.id}')">✓ 标记已处理</button>`
+      }
+    </div>`).join('');
+}
+
+async function resolve(id) {
+  try {
+    await fetch('/api/feedback?action=resolve', {
+      method: 'POST',
+      headers: mgrHeaders(),
+      body: JSON.stringify({ id }),
+    });
+    // Animate out
+    const card = document.getElementById('fb-'+id);
+    if (card) { card.style.opacity='0'; card.style.transition='opacity .3s'; setTimeout(()=>{ loadFeedback('pending'); loadFeedback('resolved'); },350); }
+  } catch { alert('操作失败，请重试'); }
+}
+
+// ── Staff account management ────────────────────────────────
+async function loadStaff() {
+  const el = document.getElementById('staff-list');
+  try {
+    const res = await fetch('/api/staff-admin', { headers: mgrHeaders() });
+    const data = await res.json();
+    staffCache = data.staff || [];
+    renderStaff();
+  } catch {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div>加载失败，请刷新</div></div>`;
+  }
+}
+
+function renderStaff() {
+  const el = document.getElementById('staff-list');
+  if (!staffCache.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">👥</div><div class="empty-title">还没有员工账号</div></div>`;
+    return;
+  }
+  el.innerHTML = staffCache.map(s => `
+    <div class="staff-card ${s.is_active?'':'inactive'}">
+      <div class="staff-info">
+        <div class="staff-name">${esc(s.name)}${s.is_active?'':' · 已停用'}</div>
+        <div class="staff-sub">PIN ${esc(s.pin)} ${s.team ? '· '+esc(s.team) : ''}</div>
+      </div>
+      <div class="staff-actions">
+        <button class="icon-btn" onclick="openEditStaff('${s.id}')" title="编辑">✏️</button>
+        <button class="icon-btn danger" onclick="deleteStaff('${s.id}')" title="删除">🗑️</button>
+      </div>
+    </div>`).join('');
+}
+
+async function addStaff() {
+  const name = document.getElementById('new-staff-name').value.trim();
+  const pin  = document.getElementById('new-staff-pin').value.trim();
+  const team = document.getElementById('new-staff-team').value.trim();
+  if (!name || !pin) { alert('请填写姓名和 PIN'); return; }
+  try {
+    const res = await fetch('/api/staff-admin?action=add', {
+      method: 'POST', headers: mgrHeaders(),
+      body: JSON.stringify({ name, pin, team: team || null }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('new-staff-name').value = '';
+    document.getElementById('new-staff-pin').value = '';
+    if (!MGR_TEAM) document.getElementById('new-staff-team').value = '';
+    loadStaff();
+  } catch (e) { alert(e.message || '新增失败'); }
+}
+
+function openEditStaff(id) {
+  const s = staffCache.find(x => x.id === id);
+  if (!s) return;
+  editStaffId = id;
+  document.getElementById('edit-staff-name').value = s.name;
+  document.getElementById('edit-staff-pin').value = s.pin;
+  document.getElementById('edit-staff-team').value = s.team || '';
+  document.getElementById('edit-staff-team').disabled = !!MGR_TEAM;
+  document.getElementById('edit-staff-active').checked = s.is_active;
+  document.getElementById('edit-staff-mask').classList.add('open');
+}
+function closeEditStaff(e) {
+  if (!e || e.target === document.getElementById('edit-staff-mask'))
+    document.getElementById('edit-staff-mask').classList.remove('open');
+}
+async function saveStaff() {
+  const name = document.getElementById('edit-staff-name').value.trim();
+  const pin  = document.getElementById('edit-staff-pin').value.trim();
+  const team = document.getElementById('edit-staff-team').value.trim();
+  const is_active = document.getElementById('edit-staff-active').checked;
+  try {
+    const res = await fetch('/api/staff-admin?action=update', {
+      method: 'POST', headers: mgrHeaders(),
+      body: JSON.stringify({ id: editStaffId, name, pin, team: team || null, is_active }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    closeEditStaff();
+    loadStaff();
+  } catch (e) { alert(e.message || '保存失败'); }
+}
+async function deleteStaff(id) {
+  const s = staffCache.find(x => x.id === id);
+  if (!confirm(`删除员工「${s ? s.name : ''}」？此操作无法撤销。`)) return;
+  try {
+    const res = await fetch('/api/staff-admin?action=delete', {
+      method: 'POST', headers: mgrHeaders(), body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    loadStaff();
+  } catch (e) { alert(e.message || '删除失败'); }
+}
+
+// ── Product management ──────────────────────────────────────
+async function loadProducts() {
+  const el = document.getElementById('product-grid');
+  try {
+    const res = await fetch('/api/products', { headers: mgrHeaders() });
+    const data = await res.json();
+    productCache = data.products || [];
+    renderProducts();
+  } catch {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div>加载失败，请刷新</div></div>`;
+  }
+}
+
+function renderProducts() {
+  const el = document.getElementById('product-grid');
+  if (!productCache.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">还没有产品</div></div>`;
+    return;
+  }
+  el.innerHTML = productCache.map(p => `
+    <div class="product-card ${p.is_active?'':'inactive'}">
+      <img src="${esc(p.image_url)}" alt="${esc(p.name)}" onerror="this.style.opacity=0.2">
+      <div class="product-body">
+        <div class="product-name">${esc(p.name)}${p.is_active?'':' (已下架)'}</div>
+        <div class="product-actions">
+          <button class="icon-btn" onclick="openEditProduct('${p.id}')" title="编辑">✏️</button>
+          <button class="icon-btn danger" onclick="deleteProduct('${p.id}')" title="删除">🗑️</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+async function addProduct() {
+  const name = document.getElementById('new-prod-name').value.trim();
+  const image_url = document.getElementById('new-prod-image').value.trim();
+  const product_url = document.getElementById('new-prod-url').value.trim();
+  if (!name || !image_url) { alert('请填写产品名字和图片链接'); return; }
+  try {
+    const res = await fetch('/api/products?action=add', {
+      method: 'POST', headers: mgrHeaders(),
+      body: JSON.stringify({ name, image_url, product_url }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('new-prod-name').value = '';
+    document.getElementById('new-prod-image').value = '';
+    document.getElementById('new-prod-url').value = '';
+    loadProducts();
+  } catch (e) { alert(e.message || '新增失败'); }
+}
+
+function openEditProduct(id) {
+  const p = productCache.find(x => x.id === id);
+  if (!p) return;
+  editProdId = id;
+  document.getElementById('edit-prod-name').value = p.name;
+  document.getElementById('edit-prod-image').value = p.image_url;
+  document.getElementById('edit-prod-url').value = p.product_url || '';
+  document.getElementById('edit-prod-active').checked = p.is_active;
+  document.getElementById('edit-prod-mask').classList.add('open');
+}
+function closeEditProduct(e) {
+  if (!e || e.target === document.getElementById('edit-prod-mask'))
+    document.getElementById('edit-prod-mask').classList.remove('open');
+}
+async function saveProduct() {
+  const name = document.getElementById('edit-prod-name').value.trim();
+  const image_url = document.getElementById('edit-prod-image').value.trim();
+  const product_url = document.getElementById('edit-prod-url').value.trim();
+  const is_active = document.getElementById('edit-prod-active').checked;
+  try {
+    const res = await fetch('/api/products?action=update', {
+      method: 'POST', headers: mgrHeaders(),
+      body: JSON.stringify({ id: editProdId, name, image_url, product_url, is_active }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    closeEditProduct();
+    loadProducts();
+  } catch (e) { alert(e.message || '保存失败'); }
+}
+async function deleteProduct(id) {
+  const p = productCache.find(x => x.id === id);
+  if (!confirm(`删除产品「${p ? p.name : ''}」？`)) return;
+  try {
+    const res = await fetch('/api/products?action=delete', {
+      method: 'POST', headers: mgrHeaders(), body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    loadProducts();
+  } catch (e) { alert(e.message || '删除失败'); }
+}
+
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+}
+function fmtDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString('zh-CN',{month:'numeric',day:'numeric'}) + ' ' +
+    d.toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+}
+
+// ── Init ──────────────────────────────────────────────────────
+document.getElementById('pwd').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+loadManagerNames();
+const saved = sessionStorage.getItem('mgr_session');
+if (saved) {
+  try {
+    const s = JSON.parse(saved);
+    MGR_TOKEN = s.token; MGR_TEAM = s.team; MGR_NAME = s.name;
+    showDash();
+  } catch {}
+}
+</script>
 </body>
 </html>
