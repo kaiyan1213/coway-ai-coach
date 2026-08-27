@@ -576,6 +576,7 @@
   <div class="modal-box" style="max-height:88vh;overflow-y:auto;padding-bottom:22px;text-align:center">
     <img id="product-view-img" style="width:100%;border-radius:12px;margin-bottom:14px;max-height:50vh;object-fit:contain">
     <div id="product-view-name" style="font-size:16px;font-weight:800;margin-bottom:14px"></div>
+    <button class="btn-copy" id="product-view-website" style="display:none;margin-bottom:10px" onclick="openProductWebsite()">前往官网查看</button>
     <div class="modal-actions" style="margin-top:0">
       <button class="btn-cancel" id="product-view-link" style="display:none" onclick="copyProductLink()">复制产品链接</button>
       <button class="btn-cancel" onclick="closeProductView()">关闭</button>
@@ -1324,8 +1325,9 @@ function openProductView(id) {
   document.getElementById('product-view-img').src = p.image_url;
   document.getElementById('product-view-name').textContent = p.name;
   const linkBtn = document.getElementById('product-view-link');
-  if (p.product_url) { _productViewUrl = p.product_url; linkBtn.style.display = ''; }
-  else { _productViewUrl = null; linkBtn.style.display = 'none'; }
+  const webBtn  = document.getElementById('product-view-website');
+  if (p.product_url) { _productViewUrl = p.product_url; linkBtn.style.display = ''; webBtn.style.display = ''; }
+  else { _productViewUrl = null; linkBtn.style.display = 'none'; webBtn.style.display = 'none'; }
   document.getElementById('modal-product-view').classList.add('open');
 }
 function closeProductView(e) {
@@ -1335,6 +1337,10 @@ function closeProductView(e) {
 function copyProductLink() {
   if (!_productViewUrl) return;
   navigator.clipboard.writeText(_productViewUrl).then(() => toast('已复制！')).catch(() => {});
+}
+function openProductWebsite() {
+  if (!_productViewUrl) return;
+  window.open(_productViewUrl, '_blank');
 }
 function renderTrash(list) {
   const el = document.getElementById('trash-list');
