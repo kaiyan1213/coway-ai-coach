@@ -306,6 +306,14 @@
     .modal-title{font-size:18px;font-weight:800;margin-bottom:18px}
     .modal-input{width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid var(--bdr);font-size:15px;margin-bottom:12px;background:var(--surf);color:var(--text)}
     .modal-actions{display:flex;gap:10px}
+
+    /* ── Product gallery card ── */
+    .pg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px}
+    .pg-card{background:var(--card);border-radius:16px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.06);cursor:pointer;transition:transform .1s,box-shadow .1s}
+    .pg-card:active{transform:scale(.97)}
+    .pg-img-wrap{background:var(--surf);height:150px;display:flex;align-items:center;justify-content:center;padding:10px}
+    .pg-img-wrap img{max-width:100%;max-height:100%;object-fit:contain}
+    .pg-name{padding:10px 12px;font-size:13px;font-weight:700;color:var(--text);text-align:center;line-height:1.3}
     .btn-confirm{flex:2;padding:14px;background:linear-gradient(135deg,#00bef5,#0095cc);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;box-shadow:0 3px 10px rgba(0,167,225,.35)}
     .btn-cancel {flex:1;padding:14px;background:var(--surf);color:var(--sub);border:1.5px solid var(--bdr);border-radius:12px;font-size:15px;font-weight:600}
 
@@ -1300,13 +1308,13 @@ function renderProducts() {
     el.innerHTML = '<div class="empty-state" style="padding:36px 20px"><div class="empty-icon">📦</div><div class="empty-title">这个分类下没有产品</div></div>';
     return;
   }
-  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
+  el.innerHTML = `<div class="pg-grid">
     ${items.map(p => `
-      <div style="cursor:pointer" onclick="openProductView('${p.id}')">
-        <img src="${escAttr(p.image_url)}" alt="${escAttr(p.name)}"
-             style="width:100%;height:100px;object-fit:cover;border-radius:12px;background:var(--surf)"
-             onerror="this.style.opacity=0.2">
-        <div style="font-size:12px;font-weight:600;margin-top:5px;line-height:1.3">${esc(p.name)}</div>
+      <div class="pg-card" onclick="openProductView('${p.id}')">
+        <div class="pg-img-wrap">
+          <img src="${escAttr(p.image_url)}" alt="${escAttr(p.name)}" onerror="this.style.opacity=0.2">
+        </div>
+        <div class="pg-name">${esc(p.name)}</div>
       </div>`).join('')}
   </div>`;
 }
