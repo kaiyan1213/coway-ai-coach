@@ -136,18 +136,20 @@ async function searchKnowledge(queryText, db, anthropic) {
   return results.slice(0, KB_SEARCH_LIMIT);
 }
 
-// 命中的知识条目里第一个带 product 的，去产品图册配一张图
-async function findProductImage(knowledgeItems, db) {
-  const matchedProduct = knowledgeItems.find(k => k.product);
-  if (!matchedProduct) return { productImage: null, productName: null };
-  const { data: prod } = await db.from('products')
+// 直接从 AI 最终回复的文字里找产品名字来配图，而不是从检索到的知识库条目里猜——
+// 知识库搜索结果里第一个带 product 字段的条目不一定是回复里真正在讲的产品，
+// 之前用那个逻辑会经常配错图。
+async function findProductImage(replyText, db) {
+  if (!replyText) return { productImage: null, productName: null };
+  const { data: products } = await db.from('products')
     .select('name, image_url')
-    .eq('is_active', true)
-    .ilike('name', `%${matchedProduct.product}%`)
-    .limit(1)
-    .maybeSingle();
-  return prod
-    ? { productImage: prod.image_url, productName: prod.name }
+    .eq('is_active', true);
+  if (!products?.length) return { productImage: null, productName: null };
+  // 名字长的先比对，避免短名字（如 "Neon"）抢先命中本该匹配长名字（如 "Neo Plus"）的文本
+  const sorted = [...products].sort((a, b) => b.name.length - a.name.length);
+  const hit = sorted.find(p => replyText.includes(p.name));
+  return hit
+    ? { productImage: hit.image_url, productName: hit.name }
     : { productImage: null, productName: null };
 }
 
@@ -311,7 +313,7 @@ module.exports = async (req, res) => {
       .update({ updated_at: new Date().toISOString() })
       .eq('id', customerId);
 
-    const { productImage, productName } = await findProductImage(knowledgeItems, db);
+    const { productImage, productName } = await findProductImage(parsed.suggestion, db);
 
     return res.status(200).json({
       suggestion:        parsed.suggestion,
@@ -384,7 +386,7 @@ module.exports = async (req, res) => {
         .eq('id', customerId);
     }
 
-    const { productImage, productName } = await findProductImage(knowledgeItems, db);
+    const { productImage, productName } = await findProductImage(parsed.answer, db);
 
     return res.status(200).json({
       answer: parsed.answer,
