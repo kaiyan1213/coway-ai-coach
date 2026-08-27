@@ -79,7 +79,7 @@
     .login-label{font-size:11px;font-weight:700;color:var(--sub);margin-bottom:7px;letter-spacing:.7px;text-transform:uppercase}
     .login-select,.login-pin{
       width:100%;padding:13px 14px;margin-bottom:14px;
-      border-radius:13px;border:1.5px solid var(--bdr);
+      border-radius:12px;border:1.5px solid var(--bdr);
       background:var(--surf);font-size:15px;color:var(--text);
     }
     .btn-login{
@@ -103,7 +103,7 @@
     .list-staff{font-size:12px;color:var(--sub);margin-left:8px;font-weight:500}
     .btn-new{
       background:linear-gradient(135deg,#00bef5,#0095cc);
-      color:#fff;border:none;border-radius:22px;padding:9px 18px;font-size:14px;font-weight:700;
+      color:#fff;border:none;border-radius:20px;padding:9px 18px;font-size:14px;font-weight:700;
       box-shadow:0 3px 10px rgba(0,167,225,.4);
       transition:transform .1s,opacity .15s;
     }
@@ -115,7 +115,7 @@
 
     /* ── Search bar ── */
     .search-wrap{padding:0 0 10px}
-    .search-input{width:100%;padding:9px 16px;border:1.5px solid var(--bdr);border-radius:22px;background:var(--surf);font-size:14px;color:var(--text)}
+    .search-input{width:100%;padding:9px 16px;border:1.5px solid var(--bdr);border-radius:20px;background:var(--surf);font-size:14px;color:var(--text)}
     .search-input:focus{border-color:var(--p)}
 
     /* ── Quick Ask panel ── */
@@ -124,7 +124,7 @@
     .quick-ask-response.show{display:block;animation:fadeUp .3s ease}
     .quick-ask-response-label{font-size:10px;font-weight:800;color:var(--p);letter-spacing:.5px;margin-bottom:6px;text-transform:uppercase}
     .quick-ask-row{display:flex;gap:8px;align-items:center}
-    .quick-ask-input{flex:1;padding:10px 14px;border:1.5px solid var(--bdr);border-radius:22px;background:var(--surf);font-size:14px;color:var(--text)}
+    .quick-ask-input{flex:1;padding:10px 14px;border:1.5px solid var(--bdr);border-radius:20px;background:var(--surf);font-size:14px;color:var(--text)}
     .quick-ask-input:focus{border-color:var(--p)}
     .quick-ask-btn{background:linear-gradient(135deg,#00bef5,#0095cc);color:#fff;border:none;border-radius:50%;width:40px;height:40px;font-size:18px;flex-shrink:0;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,167,225,.35);transition:transform .1s,opacity .15s}
     .quick-ask-btn:active{transform:scale(.92);opacity:.88}
@@ -136,7 +136,7 @@
 
     /* ── Customer card ── */
     .customer-card{
-      background:var(--card);border-radius:18px;padding:13px 14px;
+      background:var(--card);border-radius:16px;padding:13px 14px;
       margin-bottom:10px;display:flex;align-items:center;gap:12px;
       box-shadow:0 1px 2px rgba(0,0,0,.04),0 2px 8px rgba(0,0,0,.06);
       cursor:pointer;transition:transform .12s,box-shadow .12s;
@@ -242,7 +242,7 @@
     .btn-copy{
       width:100%;padding:13px;
       background:linear-gradient(135deg,#00bef5,#0095cc);
-      color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;
+      color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;
       box-shadow:0 3px 10px rgba(0,167,225,.35);
       transition:transform .1s,opacity .15s;
     }
@@ -260,7 +260,7 @@
     /* ── Action area ── */
     .action-area{background:var(--card);border-top:1px solid var(--bdr);padding:10px 12px 24px}
     .action-tabs{display:flex;gap:4px;margin-bottom:10px;background:var(--surf);border-radius:12px;padding:3px;border:1px solid var(--bdr)}
-    .tab-btn{flex:1;padding:8px 6px;border-radius:9px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--sub);transition:all .15s}
+    .tab-btn{flex:1;padding:8px 6px;border-radius:8px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--sub);transition:all .15s}
     .tab-btn.active{background:var(--card);color:var(--p);box-shadow:0 1px 4px rgba(0,0,0,.1)}
     .tab-panel{display:none}
     .tab-panel.active{display:block;animation:fadeIn .2s ease}
@@ -284,12 +284,12 @@
     /* ── Modal ── */
     .modal-mask{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:flex-end;justify-content:center;backdrop-filter:blur(6px)}
     .modal-mask.open{display:flex}
-    .modal-box{background:var(--card);width:100%;max-width:500px;border-radius:26px 26px 0 0;padding:24px 20px 38px;box-shadow:0 -8px 32px rgba(0,0,0,.12)}
+    .modal-box{background:var(--card);width:100%;max-width:500px;border-radius:28px 26px 0 0;padding:24px 20px 38px;box-shadow:0 -8px 32px rgba(0,0,0,.12)}
     .modal-title{font-size:18px;font-weight:800;margin-bottom:18px}
-    .modal-input{width:100%;padding:13px 14px;border-radius:13px;border:1.5px solid var(--bdr);font-size:15px;margin-bottom:12px;background:var(--surf);color:var(--text)}
+    .modal-input{width:100%;padding:13px 14px;border-radius:12px;border:1.5px solid var(--bdr);font-size:15px;margin-bottom:12px;background:var(--surf);color:var(--text)}
     .modal-actions{display:flex;gap:10px}
-    .btn-confirm{flex:2;padding:14px;background:linear-gradient(135deg,#00bef5,#0095cc);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;box-shadow:0 3px 10px rgba(0,167,225,.35)}
-    .btn-cancel {flex:1;padding:14px;background:var(--surf);color:var(--sub);border:1.5px solid var(--bdr);border-radius:13px;font-size:15px;font-weight:600}
+    .btn-confirm{flex:2;padding:14px;background:linear-gradient(135deg,#00bef5,#0095cc);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;box-shadow:0 3px 10px rgba(0,167,225,.35)}
+    .btn-cancel {flex:1;padding:14px;background:var(--surf);color:var(--sub);border:1.5px solid var(--bdr);border-radius:12px;font-size:15px;font-weight:600}
 
     /* ── Menu ── */
     .btn-menu{background:var(--surf);border:1.5px solid var(--bdr);border-radius:50%;width:36px;height:36px;font-size:18px;color:var(--sub);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .12s}
@@ -305,13 +305,13 @@
     .btn-report:active{opacity:1;color:var(--r)}
 
     /* ── Toast ── */
-    #toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.9);color:#fff;padding:10px 22px;border-radius:26px;font-size:14px;font-weight:500;pointer-events:none;opacity:0;transition:opacity .2s;z-index:999;backdrop-filter:blur(8px);white-space:nowrap}
+    #toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,.9);color:#fff;padding:10px 22px;border-radius:28px;font-size:14px;font-weight:500;pointer-events:none;opacity:0;transition:opacity .2s;z-index:999;backdrop-filter:blur(8px);white-space:nowrap}
     #toast.show{opacity:1}
 
     /* ── Recycle bin button ── */
 
     /* ── Danger button (delete confirm) ── */
-    .btn-danger{flex:2;padding:14px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;box-shadow:0 3px 10px rgba(239,68,68,.35);transition:opacity .15s,transform .1s}
+    .btn-danger{flex:2;padding:14px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;box-shadow:0 3px 10px rgba(239,68,68,.35);transition:opacity .15s,transform .1s}
     .btn-danger:active{opacity:.88;transform:scale(.98)}
 
     /* ── Trash modal / cards ── */
@@ -327,9 +327,9 @@
 
     /* ── Flow Selector ── */
     #flow-selector-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;padding:0}
-    .flow-sel-card{background:#fff;border-radius:22px 22px 0 0;width:100%;max-width:480px;padding:20px 16px 32px;box-shadow:0 -4px 32px rgba(0,0,0,.15)}
+    .flow-sel-card{background:#fff;border-radius:20px 22px 0 0;width:100%;max-width:480px;padding:20px 16px 32px;box-shadow:0 -4px 32px rgba(0,0,0,.15)}
     .flow-sel-title{font-size:15px;font-weight:700;color:var(--text);margin-bottom:14px;padding:0 2px}
-    .flow-opt{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:13px;border:1.5px solid var(--bdr);margin-bottom:8px;cursor:pointer;transition:background .12s,border-color .12s;-webkit-tap-highlight-color:transparent}
+    .flow-opt{display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:12px;border:1.5px solid var(--bdr);margin-bottom:8px;cursor:pointer;transition:background .12s,border-color .12s;-webkit-tap-highlight-color:transparent}
     .flow-opt:active{background:var(--p-bg);border-color:var(--p)}
     .flow-num{width:28px;height:28px;border-radius:50%;background:var(--surf);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--sub);flex-shrink:0}
     .flow-txt{flex:1}
@@ -338,7 +338,7 @@
     .flow-skip-row{display:flex;align-items:center;gap:8px;padding:10px 4px 0;border-top:1px solid var(--bdr);margin-top:4px}
     .flow-skip-input{flex:1;font-size:14px;border:none;outline:none;color:var(--sub);background:transparent;font-family:inherit}
     .flow-skip-input::placeholder{color:#94A3B8}
-    .flow-skip-btn{background:var(--surf);border:1.5px solid var(--bdr);border-radius:9px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--sub);cursor:pointer;white-space:nowrap}
+    .flow-skip-btn{background:var(--surf);border:1.5px solid var(--bdr);border-radius:8px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--sub);cursor:pointer;white-space:nowrap}
   </style>
 </head>
 <body>
