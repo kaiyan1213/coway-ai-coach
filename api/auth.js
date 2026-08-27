@@ -42,7 +42,7 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const { data, error } = await supabase()
       .from('staff')
-      .select('name, team')
+      .select('name, team, is_manager')
       .eq('is_active', true)
       .order('name');
     if (error) return res.status(500).json({ error: '读取员工列表失败' });

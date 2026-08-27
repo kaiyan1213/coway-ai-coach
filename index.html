@@ -621,7 +621,7 @@ async function loadStaffDropdown() {
     (data.staff||[]).forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.name;
-      opt.textContent = s.name + '（Staff）';
+      opt.textContent = s.name + (s.is_manager ? '（Staff · Manager）' : '（Staff）');
       sel.appendChild(opt);
     });
   } catch {
