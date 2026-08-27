@@ -309,8 +309,6 @@
     #toast.show{opacity:1}
 
     /* ── Recycle bin button ── */
-    .btn-trash-icon{background:var(--surf);border:1.5px solid var(--bdr);border-radius:22px;padding:9px 13px;font-size:15px;color:var(--sub);line-height:1;transition:transform .1s,opacity .15s}
-    .btn-trash-icon:active{transform:scale(.96);opacity:.88}
 
     /* ── Danger button (delete confirm) ── */
     .btn-danger{flex:2;padding:14px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;border:none;border-radius:13px;font-size:15px;font-weight:700;box-shadow:0 3px 10px rgba(239,68,68,.35);transition:opacity .15s,transform .1s}
@@ -373,10 +371,15 @@
         <div class="list-staff" id="list-staff-name"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
-        <button class="btn-trash-icon" id="btn-manager-entry" onclick="location.href='/manager.html'" style="display:none;font-size:13px;font-weight:600" title="Manager 后台">Manager</button>
-        <button class="btn-trash-icon" onclick="confirmLogout()" style="font-size:13px;font-weight:600" title="退出登录">退出</button>
-        <button class="btn-trash-icon" onclick="openProductsModal()" title="产品图册">📦</button>
-        <button class="btn-trash-icon" onclick="openTrashModal()" title="回收站">🗑️</button>
+        <div class="thread-menu-wrap">
+          <button class="btn-menu" onclick="toggleListMenu(event)">⋮</button>
+          <div class="thread-menu" id="list-menu" style="display:none">
+            <button class="thread-menu-item" id="menu-manager-entry" onclick="location.href='/manager.html'" style="display:none">Manager 后台</button>
+            <button class="thread-menu-item" onclick="openProductsModal()">产品图册</button>
+            <button class="thread-menu-item" onclick="openTrashModal()">回收站</button>
+            <button class="thread-menu-item" onclick="confirmLogout()">退出登录</button>
+          </div>
+        </div>
         <button class="btn-new" onclick="openNewCustomerModal()">+ 新客户</button>
       </div>
     </div>
@@ -600,7 +603,7 @@ async function init() {
       const sess = JSON.parse(saved);
       S.token = sess.token; S.staffName = sess.staffName;
       document.getElementById('list-staff-name').textContent = sess.staffName;
-      document.getElementById('btn-manager-entry').style.display = sess.isManager ? '' : 'none';
+      document.getElementById('menu-manager-entry').style.display = sess.isManager ? '' : 'none';
       document.getElementById('customer-list').innerHTML = '<div class="loading-dots" style="padding:60px 0"><span></span><span></span><span></span></div>';
       showView('list');
       await loadCustomers(); renderList();
@@ -639,7 +642,7 @@ async function doLogin() {
     S.token = data.token; S.staffName = data.staffName;
     localStorage.setItem('coway_session', JSON.stringify({token:data.token, staffName:data.staffName, isManager:data.isManager}));
     document.getElementById('list-staff-name').textContent = data.staffName;
-    document.getElementById('btn-manager-entry').style.display = data.isManager ? '' : 'none';
+    document.getElementById('menu-manager-entry').style.display = data.isManager ? '' : 'none';
     await loadCustomers(); renderList(); showView('list');
   } catch(e) { showErr(e.message||'登录失败'); }
 }
@@ -870,6 +873,16 @@ function toggleMenu(e) {
 }
 function closeMenu() {
   const m = document.getElementById('thread-menu');
+  if (m) m.style.display = 'none';
+}
+function toggleListMenu(e) {
+  e.stopPropagation();
+  const m = document.getElementById('list-menu');
+  if (!m) return;
+  m.style.display = m.style.display==='none' ? 'block' : 'none';
+}
+function closeListMenu() {
+  const m = document.getElementById('list-menu');
   if (m) m.style.display = 'none';
 }
 
@@ -1319,6 +1332,7 @@ function toast(msg) {
 // ── Init ──────────────────────────────────────────────────────
 document.getElementById('login-pin').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
 document.addEventListener('click', closeMenu);
+document.addEventListener('click', closeListMenu);
 init();
 </script>
 
