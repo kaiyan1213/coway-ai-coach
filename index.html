@@ -532,10 +532,13 @@
 <div class="modal-mask" id="modal-products" onclick="closeProductsModal(event)">
   <div class="modal-box" style="max-height:88vh;overflow-y:auto;padding-bottom:28px">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
-      <div class="modal-title" style="margin-bottom:0">📦 产品图册</div>
-      <button class="btn-cancel" style="flex:0;padding:7px 14px;font-size:13px" onclick="closeProductsModal()">关闭</button>
+      <div style="display:flex;align-items:center;gap:6px;min-width:0">
+        <button id="btn-products-back" onclick="backToProductCategories()" style="display:none;background:none;border:none;font-size:20px;color:var(--sub);padding:0 2px;cursor:pointer;line-height:1">‹</button>
+        <div class="modal-title" style="margin-bottom:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="products-modal-title">📦 产品图册</div>
+      </div>
+      <button class="btn-cancel" style="flex:0 0 auto;padding:7px 14px;font-size:13px" onclick="closeProductsModal()">关闭</button>
     </div>
-    <div style="font-size:13px;color:var(--sub);margin-bottom:16px">点图片可放大 / 复制产品链接发给客户</div>
+    <div style="font-size:13px;color:var(--sub);margin-bottom:16px" id="products-modal-hint">选择产品分类</div>
     <div id="products-groups"></div>
   </div>
 </div>
@@ -1205,6 +1208,7 @@ function closeTrashModal(e) {
 // ── Products modal ───────────────────────────────────────────
 let _productsCache = [];
 let _productViewUrl = null;
+let _productCategory = null; // null = 分类列表页；否则是当前展开的分类
 async function openProductsModal() {
   const el = document.getElementById('products-groups');
   el.innerHTML = '<div class="loading-dots" style="padding:32px 0"><span></span><span></span><span></span></div>';
@@ -1212,7 +1216,8 @@ async function openProductsModal() {
   try {
     const data = await api('/api/products');
     _productsCache = data.products || [];
-    renderProducts();
+    _productCategory = null;
+    renderProductCategories();
   } catch (e) {
     el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--sub)">加载失败，请重试</div>';
   }
@@ -1221,7 +1226,11 @@ function closeProductsModal(e) {
   if (!e || e.target === document.getElementById('modal-products'))
     document.getElementById('modal-products').classList.remove('open');
 }
-function renderProducts() {
+
+function renderProductCategories() {
+  document.getElementById('btn-products-back').style.display = 'none';
+  document.getElementById('products-modal-title').textContent = '📦 产品图册';
+  document.getElementById('products-modal-hint').textContent = '选择产品分类';
   const el = document.getElementById('products-groups');
   if (!_productsCache.length) {
     el.innerHTML = '<div class="empty-state" style="padding:36px 20px"><div class="empty-icon">📦</div><div class="empty-title">还没有产品图片</div></div>';
@@ -1234,16 +1243,43 @@ function renderProducts() {
   });
   const catNames = Object.keys(grouped).sort();
   el.innerHTML = catNames.map(cat => `
-    <div style="font-size:13px;font-weight:800;color:var(--sub);margin:${catNames[0]===cat?'0':'16px'} 0 8px">${esc(cat)}</div>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
-      ${grouped[cat].map(p => `
-        <div style="cursor:pointer" onclick="openProductView('${p.id}')">
-          <img src="${escAttr(p.image_url)}" alt="${escAttr(p.name)}"
-               style="width:100%;height:100px;object-fit:cover;border-radius:12px;background:var(--surf)"
-               onerror="this.style.opacity=0.2">
-          <div style="font-size:12px;font-weight:600;margin-top:5px;line-height:1.3">${esc(p.name)}</div>
-        </div>`).join('')}
+    <div class="customer-card" style="cursor:pointer" onclick="openProductCategory('${escAttr(cat)}')">
+      ${avatarHTML(cat, 46)}
+      <div class="customer-info">
+        <div class="customer-label">${esc(cat)}</div>
+        <div class="customer-note">${grouped[cat].length} 款产品</div>
+      </div>
     </div>`).join('');
+}
+
+function openProductCategory(cat) {
+  _productCategory = cat;
+  document.getElementById('btn-products-back').style.display = '';
+  document.getElementById('products-modal-title').textContent = cat;
+  document.getElementById('products-modal-hint').textContent = '点图片可放大 / 复制产品链接发给客户';
+  renderProducts();
+}
+function backToProductCategories() {
+  _productCategory = null;
+  renderProductCategories();
+}
+
+function renderProducts() {
+  const el = document.getElementById('products-groups');
+  const items = _productsCache.filter(p => (p.category || '其他') === _productCategory);
+  if (!items.length) {
+    el.innerHTML = '<div class="empty-state" style="padding:36px 20px"><div class="empty-icon">📦</div><div class="empty-title">这个分类下没有产品</div></div>';
+    return;
+  }
+  el.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
+    ${items.map(p => `
+      <div style="cursor:pointer" onclick="openProductView('${p.id}')">
+        <img src="${escAttr(p.image_url)}" alt="${escAttr(p.name)}"
+             style="width:100%;height:100px;object-fit:cover;border-radius:12px;background:var(--surf)"
+             onerror="this.style.opacity=0.2">
+        <div style="font-size:12px;font-weight:600;margin-top:5px;line-height:1.3">${esc(p.name)}</div>
+      </div>`).join('')}
+  </div>`;
 }
 function openProductView(id) {
   const p = _productsCache.find(x => x.id === id);
