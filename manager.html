@@ -112,19 +112,15 @@
 </head>
 <body>
 
-<!-- ─── Login ─────────────────────────────────────────────── -->
+<!-- ─── Not logged in ─────────────────────────────────────── -->
 <div id="view-login">
   <div class="login-card">
     <div class="login-logo">
       <img src="/coway-logo.png" alt="Coway">
     </div>
     <div class="login-tagline">Manager 管理后台</div>
-    <div class="lbl">Manager</div>
-    <select id="mgr-name" class="login-select"><option value="">加载中...</option></select>
-    <div class="lbl">密码</div>
-    <input id="pwd" class="login-input" type="password" placeholder="输入密码" autocomplete="current-password">
-    <button class="btn-login" onclick="login()">登录</button>
-    <div id="login-error">登录失败，请重试</div>
+    <div id="login-status" style="text-align:center;font-size:14px;color:var(--sub);line-height:1.6;margin-bottom:20px">请先在 Staff 端登录</div>
+    <button class="btn-login" onclick="location.href='/'">去 Staff 端登录</button>
   </div>
 </div>
 
@@ -309,47 +305,38 @@ let editStaffId = null;
 let editProdId = null;
 
 // ── Auth ──────────────────────────────────────────────────────
-async function loadManagerNames() {
-  const sel = document.getElementById('mgr-name');
-  try {
-    const res = await fetch('/api/auth?mgr=1');
-    const data = await res.json();
-    const names = data.managers || [];
-    sel.innerHTML = names.length
-      ? names.map(m => `<option value="${esc(m.name)}">${esc(m.name)}（Manager）</option>`).join('')
-      : `<option value="">暂无 Manager 账号</option>`;
-  } catch {
-    sel.innerHTML = `<option value="">加载失败</option>`;
+// Manager 权限现在挂在 staff 账号上，跟 index.html 共用同一个登录 session
+// （localStorage 'coway_session'），这里不再有独立的登录表单。
+async function checkAuth() {
+  const status = document.getElementById('login-status');
+  const saved = localStorage.getItem('coway_session');
+  if (!saved) {
+    status.textContent = '请先在 Staff 端登录';
+    return;
   }
-}
+  let sess;
+  try { sess = JSON.parse(saved); } catch { status.textContent = '请先在 Staff 端登录'; return; }
 
-async function login() {
-  const name = document.getElementById('mgr-name').value;
-  const pwd = document.getElementById('pwd').value.trim();
-  if (!name || !pwd) return;
-  document.getElementById('login-error').style.display = 'none';
   try {
-    const res = await fetch('/api/auth?mgr=1', {
-      method: 'POST', headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({ name, password: pwd }),
+    const res = await fetch('/api/auth?whoami=1', {
+      headers: { Authorization: 'Bearer ' + sess.token },
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'wrong');
-    MGR_TOKEN = data.token; MGR_TEAM = data.team; MGR_NAME = data.managerName;
-    sessionStorage.setItem('mgr_session', JSON.stringify({ token: MGR_TOKEN, team: MGR_TEAM, name: MGR_NAME }));
+    if (!res.ok || !data.isManager) {
+      status.textContent = '这个账号没有 Manager 权限';
+      return;
+    }
+    MGR_TOKEN = sess.token; MGR_NAME = data.staffName; MGR_TEAM = data.managerScopeTeam;
     showDash();
-  } catch (e) {
-    document.getElementById('login-error').textContent = e.message === 'wrong' ? '登录失败，请重试' : e.message;
-    document.getElementById('login-error').style.display = 'block';
+  } catch {
+    status.textContent = '加载失败，请刷新重试';
   }
 }
 
 function logout() {
-  sessionStorage.removeItem('mgr_session');
+  localStorage.removeItem('coway_session');
   MGR_TOKEN = null; MGR_TEAM = null; MGR_NAME = null;
-  document.getElementById('view-dash').style.display = 'none';
-  document.getElementById('view-login').style.display = 'flex';
-  loadManagerNames();
+  location.href = '/';
 }
 
 function showDash() {
@@ -864,17 +851,8 @@ function fmtDate(iso) {
 }
 
 // ── Init ──────────────────────────────────────────────────────
-document.getElementById('pwd').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
-loadManagerNames();
 populateKbCategorySelects();
-const saved = sessionStorage.getItem('mgr_session');
-if (saved) {
-  try {
-    const s = JSON.parse(saved);
-    MGR_TOKEN = s.token; MGR_TEAM = s.team; MGR_NAME = s.name;
-    showDash();
-  } catch {}
-}
+checkAuth();
 </script>
 </body>
 </html>

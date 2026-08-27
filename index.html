@@ -373,6 +373,7 @@
         <div class="list-staff" id="list-staff-name"></div>
       </div>
       <div style="display:flex;gap:8px;align-items:center">
+        <button class="btn-trash-icon" id="btn-manager-entry" onclick="location.href='/manager.html'" style="display:none;font-size:13px;font-weight:600" title="Manager 后台">Manager</button>
         <button class="btn-trash-icon" onclick="confirmLogout()" style="font-size:13px;font-weight:600" title="退出登录">退出</button>
         <button class="btn-trash-icon" onclick="openProductsModal()" title="产品图册">📦</button>
         <button class="btn-trash-icon" onclick="openTrashModal()" title="回收站">🗑️</button>
@@ -599,6 +600,7 @@ async function init() {
       const sess = JSON.parse(saved);
       S.token = sess.token; S.staffName = sess.staffName;
       document.getElementById('list-staff-name').textContent = sess.staffName;
+      document.getElementById('btn-manager-entry').style.display = sess.isManager ? '' : 'none';
       document.getElementById('customer-list').innerHTML = '<div class="loading-dots" style="padding:60px 0"><span></span><span></span><span></span></div>';
       showView('list');
       await loadCustomers(); renderList();
@@ -635,8 +637,9 @@ async function doLogin() {
   try {
     const data = await api('/api/auth', {method:'POST', body:{name,pin}});
     S.token = data.token; S.staffName = data.staffName;
-    localStorage.setItem('coway_session', JSON.stringify({token:data.token, staffName:data.staffName}));
+    localStorage.setItem('coway_session', JSON.stringify({token:data.token, staffName:data.staffName, isManager:data.isManager}));
     document.getElementById('list-staff-name').textContent = data.staffName;
+    document.getElementById('btn-manager-entry').style.display = data.isManager ? '' : 'none';
     await loadCustomers(); renderList(); showView('list');
   } catch(e) { showErr(e.message||'登录失败'); }
 }

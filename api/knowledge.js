@@ -1,7 +1,7 @@
 'use strict';
 // api/knowledge.js — 知识库管理（Manager 专用）
 //
-// 所有请求需带 Authorization: Bearer <manager token>（登录 /api/auth?mgr=1 拿到）
+// 所有请求需带 Authorization: Bearer <staff token>（is_manager 账号登录 /api/auth 拿到）
 //
 // GET  /api/knowledge                    → 列出所有知识条目
 // POST /api/knowledge?action=add         → 新增一条知识

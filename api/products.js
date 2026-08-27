@@ -26,7 +26,7 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const token = bearer(req);
     const isStaff = !!verifyToken(token);
-    const mgr = isStaff ? null : await authManager(req, db);
+    const mgr = await authManager(req, db);
     if (!isStaff && !mgr) return res.status(401).json({ error: '未授权' });
 
     let q = db.from('products')
