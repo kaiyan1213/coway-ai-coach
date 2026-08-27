@@ -112,22 +112,14 @@
       flex-shrink:0;
     }
     .btn-new:active{transform:scale(.96);opacity:.88}
-
-    /* ── Quick access row ── */
-    .qa-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none;-ms-overflow-style:none}
-    .qa-row::-webkit-scrollbar{display:none}
-    .qa-tile{
-      flex-shrink:0;display:flex;align-items:center;gap:8px;
-      background:var(--surf);border:1.5px solid var(--bdr);border-radius:16px;
-      padding:8px 14px 8px 8px;transition:transform .1s,opacity .15s;
+    .btn-hamburger{
+      background:var(--surf);border:1.5px solid var(--bdr);border-radius:50%;
+      width:36px;height:36px;flex-shrink:0;
+      display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+      transition:background .12s;
     }
-    .qa-tile:active{transform:scale(.96);opacity:.85}
-    .qa-tile-badge{
-      width:28px;height:28px;border-radius:50%;color:#fff;
-      font-size:12px;font-weight:800;flex-shrink:0;
-      display:flex;align-items:center;justify-content:center;
-    }
-    .qa-tile-label{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap}
+    .btn-hamburger:active{background:var(--p-bg)}
+    .btn-hamburger span{width:15px;height:2px;background:var(--sub);border-radius:1px}
     .filter-bar{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none;-ms-overflow-style:none}
     .filter-bar::-webkit-scrollbar{display:none}
     .filter-btn{padding:5px 14px;border-radius:20px;border:1.5px solid var(--bdr);background:var(--surf);color:var(--sub);font-size:13px;font-weight:600;white-space:nowrap;transition:all .15s}
@@ -398,25 +390,18 @@
         <div class="list-greeting" id="list-greeting"></div>
         <div class="list-staff" id="list-staff-name"></div>
       </div>
-      <button class="btn-new" onclick="openNewCustomerModal()">+ 新客户</button>
-    </div>
-    <div class="qa-row" id="qa-row">
-      <button class="qa-tile" id="qa-manager" onclick="location.href='/manager.html'" style="display:none">
-        <span class="qa-tile-badge" style="background:#7C3AED">M</span>
-        <span class="qa-tile-label">Manager</span>
-      </button>
-      <button class="qa-tile" onclick="openProductsModal()">
-        <span class="qa-tile-badge" style="background:#0891B2">产</span>
-        <span class="qa-tile-label">产品图册</span>
-      </button>
-      <button class="qa-tile" onclick="openTrashModal()">
-        <span class="qa-tile-badge" style="background:#65A30D">收</span>
-        <span class="qa-tile-label">回收站</span>
-      </button>
-      <button class="qa-tile" onclick="confirmLogout()">
-        <span class="qa-tile-badge" style="background:#DB2777">出</span>
-        <span class="qa-tile-label">退出</span>
-      </button>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <div class="thread-menu-wrap">
+          <button class="btn-hamburger" onclick="toggleListMenu(event)"><span></span><span></span><span></span></button>
+          <div class="thread-menu" id="list-menu" style="display:none">
+            <button class="thread-menu-item" id="qa-manager" onclick="location.href='/manager.html'" style="display:none">Manager 后台</button>
+            <button class="thread-menu-item" onclick="openProductsModal()">产品图册</button>
+            <button class="thread-menu-item" onclick="openTrashModal()">回收站</button>
+            <button class="thread-menu-item" onclick="confirmLogout()">退出登录</button>
+          </div>
+        </div>
+        <button class="btn-new" onclick="openNewCustomerModal()">+ 新客户</button>
+      </div>
     </div>
     <div class="filter-bar">
       <button class="filter-btn active" data-filter="all"   onclick="setFilter('all')">全部</button>
@@ -922,6 +907,16 @@ function closeMenu() {
   const m = document.getElementById('thread-menu');
   if (m) m.style.display = 'none';
 }
+function toggleListMenu(e) {
+  e.stopPropagation();
+  const m = document.getElementById('list-menu');
+  if (!m) return;
+  m.style.display = m.style.display==='none' ? 'block' : 'none';
+}
+function closeListMenu() {
+  const m = document.getElementById('list-menu');
+  if (m) m.style.display = 'none';
+}
 
 // ── Rename / Delete ───────────────────────────────────────────
 function startRenameCustomer() {
@@ -1420,6 +1415,7 @@ function toast(msg) {
 // ── Init ──────────────────────────────────────────────────────
 document.getElementById('login-pin').addEventListener('keydown', e => { if (e.key==='Enter') doLogin(); });
 document.addEventListener('click', closeMenu);
+document.addEventListener('click', closeListMenu);
 init();
 </script>
 
