@@ -619,7 +619,7 @@ async function loadStaffDropdown() {
     (data.staff||[]).forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.name;
-      opt.textContent = s.name + (s.team ? `（${s.team}）` : '');
+      opt.textContent = s.name + '（Staff）';
       sel.appendChild(opt);
     });
   } catch {

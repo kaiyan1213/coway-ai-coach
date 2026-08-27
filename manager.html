@@ -316,7 +316,7 @@ async function loadManagerNames() {
     const data = await res.json();
     const names = data.managers || [];
     sel.innerHTML = names.length
-      ? names.map(m => `<option value="${esc(m.name)}">${esc(m.name)}</option>`).join('')
+      ? names.map(m => `<option value="${esc(m.name)}">${esc(m.name)}（Manager）</option>`).join('')
       : `<option value="">暂无 Manager 账号</option>`;
   } catch {
     sel.innerHTML = `<option value="">加载失败</option>`;
