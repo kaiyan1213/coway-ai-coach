@@ -43,17 +43,29 @@
     .dash-body{flex:1;padding:14px 12px}
 
     /* ── Feedback card ── */
-    .fb-card{background:var(--card);border-radius:16px;padding:15px 16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);border-left:4px solid var(--r)}
-    .fb-card.resolved{border-left-color:#D1D5DB;opacity:.7}
-    .fb-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:4px}
+    .fb-card{background:var(--card);border-radius:16px;padding:16px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.06),0 1px 12px rgba(0,0,0,.04)}
+    .fb-card.resolved{opacity:.75}
+    .fb-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .fb-avatar{width:34px;height:34px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:800}
+    .fb-header-info{flex:1;min-width:0}
     .fb-staff{font-size:13px;font-weight:700;color:var(--text)}
-    .fb-time{font-size:11px;color:var(--sub)}
+    .fb-time{font-size:11px;color:var(--sub);margin-top:1px}
     .fb-customer{font-size:12px;color:var(--sub);margin-bottom:6px}
-    .fb-type{display:inline-block;padding:2px 8px;border-radius:10px;font-size:11px;font-weight:700;background:var(--p-bg);color:var(--p-tx);margin-bottom:8px}
+    .fb-badges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+    .fb-type{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;background:var(--p-bg);color:var(--p-tx)}
     .fb-label{font-size:11px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
-    .fb-response{font-size:13px;color:var(--sub);line-height:1.5;background:var(--surf);border-radius:8px;padding:8px 10px;margin-bottom:8px;max-height:72px;overflow:hidden;position:relative}
-    .fb-response::after{content:'';position:absolute;bottom:0;left:0;right:0;height:24px;background:linear-gradient(transparent,var(--surf))}
-    .fb-note{font-size:14px;color:var(--text);line-height:1.55;margin-bottom:10px;font-weight:500}
+    .fb-block{border-radius:12px;padding:11px 12px;margin-bottom:10px}
+    .fb-block-context{background:var(--surf)}
+    .fb-block-problem{background:var(--r-bg);border:1px solid #FECACA}
+    .fb-block-fix{background:var(--g-bg);border:1px solid #A7F3D0}
+    .fb-block-label{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px;display:flex;align-items:center;gap:5px}
+    .fb-block-label.problem{color:var(--r-tx)}
+    .fb-block-label.fix{color:var(--g-tx)}
+    .fb-response{font-size:13px;color:var(--text);line-height:1.55;max-height:96px;overflow:hidden;position:relative}
+    .fb-response::after{content:'';position:absolute;bottom:0;left:0;right:0;height:24px;background:linear-gradient(transparent,var(--r-bg))}
+    .fb-note{font-size:14px;color:var(--text);line-height:1.55;font-weight:500}
+    .fb-answer-textarea{width:100%;padding:10px 12px;border:1.5px solid #A7F3D0;border-radius:10px;font-size:14px;font-family:inherit;resize:vertical;background:#fff;color:var(--text)}
+    .fb-answer-textarea:focus{border-color:var(--g)}
     .btn-resolve{background:linear-gradient(135deg,#10B981,#059669);color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:13px;font-weight:700;box-shadow:0 2px 8px rgba(16,185,129,.3);transition:opacity .15s}
     .btn-resolve:active{opacity:.85}
     .resolved-badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;color:var(--g-tx);background:var(--g-bg);padding:4px 10px;border-radius:10px}
@@ -308,6 +320,12 @@ let MGR_TOKEN = null;
 let MGR_TEAM  = null;
 let MGR_NAME  = null;
 let currentTab = 'pending';
+const AVATAR_COLORS = ['#00a7e1','#0891B2','#059669','#7C3AED','#DB2777','#EA580C','#0284C7','#65A30D'];
+function avatarColor(label) {
+  let h = 0;
+  for (let i = 0; i < label.length; i++) h = (h * 31 + label.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
+}
 let feedbackCache = {};
 let counts = { pending: 0, resolved: 0 };
 let staffCache = [];
@@ -424,22 +442,36 @@ function renderFeedback(list, tab) {
   }
   el.innerHTML = list.map(f => `
     <div class="fb-card ${f.resolved?'resolved':''}" id="fb-${f.id}">
-      <div class="fb-meta">
-        <span class="fb-staff">👤 ${esc(f.staff_name)}</span>
-        <span class="fb-time">${fmtDate(f.created_at)}</span>
+      <div class="fb-header">
+        <div class="fb-avatar" style="background:${avatarColor(f.staff_name)}">${esc(f.staff_name.slice(0,1))}</div>
+        <div class="fb-header-info">
+          <div class="fb-staff">${esc(f.staff_name)}</div>
+          <div class="fb-time">${fmtDate(f.created_at)}</div>
+        </div>
+        ${f.resolved ? `<span class="resolved-badge">✓ 已处理</span>` : ''}
       </div>
-      ${f.customer_label ? `<div class="fb-customer">客户：${esc(f.customer_label)}</div>` : ''}
-      <span class="fb-type">${f.ai_type==='screenshot'?'📋 截图分析':'💬 问题解答'}</span>
-      ${f.situation ? `<div class="fb-label">原问题</div><div class="fb-customer" style="margin-bottom:8px">${esc(f.situation)}</div>` : ''}
-      <div class="fb-label">AI 回复内容（错的）</div>
-      <div class="fb-response">${esc(f.ai_response)}</div>
-      <div class="fb-label">Staff 反映的问题</div>
-      <div class="fb-note">${esc(f.feedback_note)}</div>
-      ${f.resolved
-        ? `<span class="resolved-badge">✓ 已处理</span>`
-        : `
-      <div class="fb-label" style="margin-top:10px">正确答案（保存后自动加进知识库，AI 以后会用这个回答）</div>
-      <textarea id="fb-answer-${f.id}" class="form-input" rows="3" style="resize:vertical;font-family:inherit;margin-bottom:10px" placeholder="填写正确答案..."></textarea>
+      <div class="fb-badges">
+        <span class="fb-type">${f.ai_type==='screenshot'?'截图分析':'问题解答'}</span>
+        ${f.customer_label ? `<span class="fb-type" style="background:var(--surf);color:var(--sub)">客户：${esc(f.customer_label)}</span>` : ''}
+      </div>
+      ${f.situation ? `
+      <div class="fb-block fb-block-context">
+        <div class="fb-label">原问题</div>
+        <div class="fb-response" style="max-height:none">${esc(f.situation)}</div>
+      </div>` : ''}
+      <div class="fb-block fb-block-problem">
+        <div class="fb-block-label problem">✕ AI 回复内容（错的）</div>
+        <div class="fb-response">${esc(f.ai_response)}</div>
+      </div>
+      <div class="fb-block fb-block-context">
+        <div class="fb-label">Staff 反映的问题</div>
+        <div class="fb-note">${esc(f.feedback_note)}</div>
+      </div>
+      ${f.resolved ? '' : `
+      <div class="fb-block fb-block-fix">
+        <div class="fb-block-label fix">✓ 正确答案（保存后自动加进知识库，AI 以后会用这个回答）</div>
+        <textarea id="fb-answer-${f.id}" class="fb-answer-textarea" rows="3" placeholder="填写正确答案..."></textarea>
+      </div>
       <button class="btn-resolve" style="width:100%;padding:11px;margin-bottom:8px" onclick="saveCorrectAnswer('${f.id}')">✓ 保存答案并标记已处理</button>
       <button class="btn-cancel" style="width:100%" onclick="resolve('${f.id}')">只标记已处理，不加进知识库</button>`
       }
