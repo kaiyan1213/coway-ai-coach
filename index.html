@@ -1206,7 +1206,7 @@ function closeTrashModal(e) {
 let _productsCache = [];
 let _productViewUrl = null;
 async function openProductsModal() {
-  const el = document.getElementById('products-grid');
+  const el = document.getElementById('products-groups');
   el.innerHTML = '<div class="loading-dots" style="padding:32px 0"><span></span><span></span><span></span></div>';
   document.getElementById('modal-products').classList.add('open');
   try {
