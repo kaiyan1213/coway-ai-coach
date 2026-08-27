@@ -298,6 +298,7 @@ let MGR_TOKEN = null;
 let MGR_TEAM  = null;
 let MGR_NAME  = null;
 let currentTab = 'pending';
+let feedbackCache = {};
 let counts = { pending: 0, resolved: 0 };
 let staffCache = [];
 let productCache = [];
@@ -385,6 +386,7 @@ async function loadFeedback(tab) {
     });
     const data = await res.json();
     const list = data.feedback || [];
+    list.forEach(f => feedbackCache[f.id] = f);
 
     if (tab === 'pending')  { counts.pending  = list.length; document.getElementById('sum-pending').textContent  = list.length; }
     if (tab === 'resolved') { counts.resolved = list.length; document.getElementById('sum-resolved').textContent = list.length; }
@@ -417,13 +419,18 @@ function renderFeedback(list, tab) {
       </div>
       ${f.customer_label ? `<div class="fb-customer">客户：${esc(f.customer_label)}</div>` : ''}
       <span class="fb-type">${f.ai_type==='screenshot'?'📋 截图分析':'💬 问题解答'}</span>
-      <div class="fb-label">AI 回复内容</div>
+      ${f.situation ? `<div class="fb-label">原问题</div><div class="fb-customer" style="margin-bottom:8px">${esc(f.situation)}</div>` : ''}
+      <div class="fb-label">AI 回复内容（错的）</div>
       <div class="fb-response">${esc(f.ai_response)}</div>
       <div class="fb-label">Staff 反映的问题</div>
       <div class="fb-note">${esc(f.feedback_note)}</div>
       ${f.resolved
         ? `<span class="resolved-badge">✓ 已处理</span>`
-        : `<button class="btn-resolve" onclick="resolve('${f.id}')">✓ 标记已处理</button>`
+        : `
+      <div class="fb-label" style="margin-top:10px">正确答案（保存后自动加进知识库，AI 以后会用这个回答）</div>
+      <textarea id="fb-answer-${f.id}" class="form-input" rows="3" style="resize:vertical;font-family:inherit;margin-bottom:10px" placeholder="填写正确答案..."></textarea>
+      <button class="btn-resolve" style="width:100%;padding:11px;margin-bottom:8px" onclick="saveCorrectAnswer('${f.id}')">✓ 保存答案并标记已处理</button>
+      <button class="btn-cancel" style="width:100%" onclick="resolve('${f.id}')">只标记已处理，不加进知识库</button>`
       }
     </div>`).join('');
 }
@@ -439,6 +446,25 @@ async function resolve(id) {
     const card = document.getElementById('fb-'+id);
     if (card) { card.style.opacity='0'; card.style.transition='opacity .3s'; setTimeout(()=>{ loadFeedback('pending'); loadFeedback('resolved'); },350); }
   } catch { alert('操作失败，请重试'); }
+}
+
+async function saveCorrectAnswer(id) {
+  const f = feedbackCache[id];
+  const textarea = document.getElementById('fb-answer-' + id);
+  const answer = textarea.value.trim();
+  if (!answer) { alert('请填写正确答案'); return; }
+  const topicSource = (f?.situation || f?.feedback_note || f?.customer_label || f?.staff_name || '').trim();
+  const topic = ('报错修正：' + topicSource).slice(0, 60);
+  if (!confirm(`确认保存这个正确答案吗？以后 AI 遇到类似问题会用这个回答。\n\n${answer.slice(0,100)}`)) return;
+  try {
+    const kbRes = await fetch('/api/knowledge?action=add', {
+      method: 'POST', headers: mgrHeaders(),
+      body: JSON.stringify({ category: '话术FAQ', topic, content: answer }),
+    });
+    const kbData = await kbRes.json();
+    if (!kbRes.ok) throw new Error(kbData.error);
+    await resolve(id);
+  } catch (e) { alert(e.message || '保存失败'); }
 }
 
 // ── Staff account management ────────────────────────────────

@@ -1022,7 +1022,7 @@ async function submitQuestion() {
   document.getElementById('ai-result-area').innerHTML='';
   try {
     const data = await api('/api/coach', {method:'POST', body:{customerId:S.currentCustomerId, mode:'qa', question}});
-    showAIResult({type:'qa', ...data});
+    showAIResult({type:'qa', question, ...data});
     document.getElementById('qa-question').value='';
     // 刷新历史，让刚才的问答出现在对话记录里
     await loadThread(S.currentCustomerId);
