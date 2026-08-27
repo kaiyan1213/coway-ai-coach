@@ -536,7 +536,7 @@
       <button class="btn-cancel" style="flex:0;padding:7px 14px;font-size:13px" onclick="closeProductsModal()">关闭</button>
     </div>
     <div style="font-size:13px;color:var(--sub);margin-bottom:16px">点图片可放大 / 复制产品链接发给客户</div>
-    <div id="products-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px"></div>
+    <div id="products-groups"></div>
   </div>
 </div>
 
@@ -1222,17 +1222,27 @@ function closeProductsModal(e) {
     document.getElementById('modal-products').classList.remove('open');
 }
 function renderProducts() {
-  const el = document.getElementById('products-grid');
+  const el = document.getElementById('products-groups');
   if (!_productsCache.length) {
-    el.innerHTML = '<div class="empty-state" style="grid-column:1/-1;padding:36px 20px"><div class="empty-icon">📦</div><div class="empty-title">还没有产品图片</div></div>';
+    el.innerHTML = '<div class="empty-state" style="padding:36px 20px"><div class="empty-icon">📦</div><div class="empty-title">还没有产品图片</div></div>';
     return;
   }
-  el.innerHTML = _productsCache.map(p => `
-    <div style="cursor:pointer" onclick="openProductView('${p.id}')">
-      <img src="${escAttr(p.image_url)}" alt="${escAttr(p.name)}"
-           style="width:100%;height:100px;object-fit:cover;border-radius:12px;background:var(--surf)"
-           onerror="this.style.opacity=0.2">
-      <div style="font-size:12px;font-weight:600;margin-top:5px;line-height:1.3">${esc(p.name)}</div>
+  const grouped = {};
+  _productsCache.forEach(p => {
+    const cat = p.category || '其他';
+    (grouped[cat] = grouped[cat] || []).push(p);
+  });
+  const catNames = Object.keys(grouped).sort();
+  el.innerHTML = catNames.map(cat => `
+    <div style="font-size:13px;font-weight:800;color:var(--sub);margin:${catNames[0]===cat?'0':'16px'} 0 8px">${esc(cat)}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px">
+      ${grouped[cat].map(p => `
+        <div style="cursor:pointer" onclick="openProductView('${p.id}')">
+          <img src="${escAttr(p.image_url)}" alt="${escAttr(p.name)}"
+               style="width:100%;height:100px;object-fit:cover;border-radius:12px;background:var(--surf)"
+               onerror="this.style.opacity=0.2">
+          <div style="font-size:12px;font-weight:600;margin-top:5px;line-height:1.3">${esc(p.name)}</div>
+        </div>`).join('')}
     </div>`).join('');
 }
 function openProductView(id) {

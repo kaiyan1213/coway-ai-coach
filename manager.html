@@ -169,6 +169,7 @@
           <input id="new-staff-team" class="form-input" placeholder="Team">
         </div>
         <div class="hint" id="team-scope-hint" style="display:none"></div>
+        <label class="check-row"><input type="checkbox" id="new-staff-is-manager"> 同时给 Manager 权限</label>
         <button class="btn-primary" onclick="addStaff()">新增</button>
       </div>
       <div id="staff-list"></div>
@@ -180,6 +181,7 @@
         <div class="form-title">➕ 新增产品</div>
         <div class="form-row">
           <input id="new-prod-name" class="form-input" placeholder="产品名字（建议跟知识库 product 一致）">
+          <input id="new-prod-category" class="form-input" list="prod-category-list" placeholder="分类，例如：净水器">
         </div>
         <div class="form-row">
           <input id="new-prod-image" class="form-input" placeholder="图片链接（coway.com.my）">
@@ -189,7 +191,11 @@
         </div>
         <button class="btn-primary" onclick="addProduct()">新增</button>
       </div>
-      <div class="product-grid" id="product-grid"></div>
+      <datalist id="prod-category-list"></datalist>
+      <div class="form-row" style="margin-bottom:14px">
+        <select id="prod-filter-category" class="form-input" style="flex:0 0 auto;min-width:160px" onchange="renderProducts()"></select>
+      </div>
+      <div id="product-groups"></div>
     </div>
 
     <!-- Promotion tab -->
@@ -268,6 +274,7 @@
     <div class="lbl">Team</div>
     <input id="edit-staff-team" class="form-input login-input" style="margin-bottom:0">
     <label class="check-row"><input type="checkbox" id="edit-staff-active"> 在职</label>
+    <label class="check-row"><input type="checkbox" id="edit-staff-is-manager"> Manager 权限</label>
     <div class="btn-row">
       <button class="btn-cancel" onclick="closeEditStaff()">取消</button>
       <button class="btn-save" onclick="saveStaff()">保存</button>
@@ -281,6 +288,8 @@
     <div class="edit-title">编辑产品</div>
     <div class="lbl">产品名字</div>
     <input id="edit-prod-name" class="form-input login-input" style="margin-bottom:10px">
+    <div class="lbl">分类</div>
+    <input id="edit-prod-category" class="form-input login-input" list="prod-category-list" style="margin-bottom:10px">
     <div class="lbl">图片链接</div>
     <input id="edit-prod-image" class="form-input login-input" style="margin-bottom:10px">
     <div class="lbl">产品页链接</div>
@@ -489,7 +498,7 @@ function renderStaff() {
   el.innerHTML = staffCache.map(s => `
     <div class="staff-card ${s.is_active?'':'inactive'}">
       <div class="staff-info">
-        <div class="staff-name">${esc(s.name)}${s.is_active?'':' · 已停用'}</div>
+        <div class="staff-name">${esc(s.name)}${s.is_manager?' · Manager':''}${s.is_active?'':' · 已停用'}</div>
         <div class="staff-sub">PIN ${esc(s.pin)} ${s.team ? '· '+esc(s.team) : ''}</div>
       </div>
       <div class="staff-actions">
@@ -503,16 +512,18 @@ async function addStaff() {
   const name = document.getElementById('new-staff-name').value.trim();
   const pin  = document.getElementById('new-staff-pin').value.trim();
   const team = document.getElementById('new-staff-team').value.trim();
+  const is_manager = document.getElementById('new-staff-is-manager').checked;
   if (!name || !pin) { alert('请填写姓名和 PIN'); return; }
   try {
     const res = await fetch('/api/staff-admin?action=add', {
       method: 'POST', headers: mgrHeaders(),
-      body: JSON.stringify({ name, pin, team: team || null }),
+      body: JSON.stringify({ name, pin, team: team || null, is_manager }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     document.getElementById('new-staff-name').value = '';
     document.getElementById('new-staff-pin').value = '';
+    document.getElementById('new-staff-is-manager').checked = false;
     if (!MGR_TEAM) document.getElementById('new-staff-team').value = '';
     loadStaff();
   } catch (e) { alert(e.message || '新增失败'); }
@@ -527,6 +538,7 @@ function openEditStaff(id) {
   document.getElementById('edit-staff-team').value = s.team || '';
   document.getElementById('edit-staff-team').disabled = !!MGR_TEAM;
   document.getElementById('edit-staff-active').checked = s.is_active;
+  document.getElementById('edit-staff-is-manager').checked = s.is_manager;
   document.getElementById('edit-staff-mask').classList.add('open');
 }
 function closeEditStaff(e) {
@@ -538,10 +550,11 @@ async function saveStaff() {
   const pin  = document.getElementById('edit-staff-pin').value.trim();
   const team = document.getElementById('edit-staff-team').value.trim();
   const is_active = document.getElementById('edit-staff-active').checked;
+  const is_manager = document.getElementById('edit-staff-is-manager').checked;
   try {
     const res = await fetch('/api/staff-admin?action=update', {
       method: 'POST', headers: mgrHeaders(),
-      body: JSON.stringify({ id: editStaffId, name, pin, team: team || null, is_active }),
+      body: JSON.stringify({ id: editStaffId, name, pin, team: team || null, is_active, is_manager }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
@@ -576,37 +589,66 @@ async function loadProducts() {
 }
 
 function renderProducts() {
-  const el = document.getElementById('product-grid');
+  const el = document.getElementById('product-groups');
+  const filterSel = document.getElementById('prod-filter-category');
+  const categories = [...new Set(productCache.map(p => p.category || '未分类'))].sort();
+
+  const prevFilter = filterSel.value;
+  filterSel.innerHTML = '<option value="">全部分类</option>' + categories.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  filterSel.value = categories.includes(prevFilter) ? prevFilter : '';
+  document.getElementById('prod-category-list').innerHTML =
+    categories.filter(c => c !== '未分类').map(c => `<option value="${esc(c)}">`).join('');
+
   if (!productCache.length) {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">还没有产品</div></div>`;
     return;
   }
-  el.innerHTML = productCache.map(p => `
-    <div class="product-card ${p.is_active?'':'inactive'}">
-      <img src="${esc(p.image_url)}" alt="${esc(p.name)}" onerror="this.style.opacity=0.2">
-      <div class="product-body">
-        <div class="product-name">${esc(p.name)}${p.is_active?'':' (已下架)'}</div>
-        <div class="product-actions">
-          <button class="icon-btn" onclick="openEditProduct('${p.id}')" title="编辑">✏️</button>
-          <button class="icon-btn danger" onclick="deleteProduct('${p.id}')" title="删除">🗑️</button>
-        </div>
-      </div>
+
+  const activeFilter = filterSel.value;
+  const grouped = {};
+  productCache.forEach(p => {
+    const cat = p.category || '未分类';
+    if (activeFilter && cat !== activeFilter) return;
+    (grouped[cat] = grouped[cat] || []).push(p);
+  });
+  const catNames = Object.keys(grouped).sort();
+  if (!catNames.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-title">这个分类下没有产品</div></div>`;
+    return;
+  }
+
+  el.innerHTML = catNames.map(cat => `
+    <div class="form-title" style="margin:16px 0 10px">${esc(cat)}</div>
+    <div class="product-grid">
+      ${grouped[cat].map(p => `
+        <div class="product-card ${p.is_active?'':'inactive'}">
+          <img src="${esc(p.image_url)}" alt="${esc(p.name)}" onerror="this.style.opacity=0.2">
+          <div class="product-body">
+            <div class="product-name">${esc(p.name)}${p.is_active?'':' (已下架)'}</div>
+            <div class="product-actions">
+              <button class="icon-btn" onclick="openEditProduct('${p.id}')" title="编辑">✏️</button>
+              <button class="icon-btn danger" onclick="deleteProduct('${p.id}')" title="删除">🗑️</button>
+            </div>
+          </div>
+        </div>`).join('')}
     </div>`).join('');
 }
 
 async function addProduct() {
   const name = document.getElementById('new-prod-name').value.trim();
+  const category = document.getElementById('new-prod-category').value.trim();
   const image_url = document.getElementById('new-prod-image').value.trim();
   const product_url = document.getElementById('new-prod-url').value.trim();
   if (!name || !image_url) { alert('请填写产品名字和图片链接'); return; }
   try {
     const res = await fetch('/api/products?action=add', {
       method: 'POST', headers: mgrHeaders(),
-      body: JSON.stringify({ name, image_url, product_url }),
+      body: JSON.stringify({ name, category, image_url, product_url }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);
     document.getElementById('new-prod-name').value = '';
+    document.getElementById('new-prod-category').value = '';
     document.getElementById('new-prod-image').value = '';
     document.getElementById('new-prod-url').value = '';
     loadProducts();
@@ -618,6 +660,7 @@ function openEditProduct(id) {
   if (!p) return;
   editProdId = id;
   document.getElementById('edit-prod-name').value = p.name;
+  document.getElementById('edit-prod-category').value = p.category || '';
   document.getElementById('edit-prod-image').value = p.image_url;
   document.getElementById('edit-prod-url').value = p.product_url || '';
   document.getElementById('edit-prod-active').checked = p.is_active;
@@ -629,13 +672,14 @@ function closeEditProduct(e) {
 }
 async function saveProduct() {
   const name = document.getElementById('edit-prod-name').value.trim();
+  const category = document.getElementById('edit-prod-category').value.trim();
   const image_url = document.getElementById('edit-prod-image').value.trim();
   const product_url = document.getElementById('edit-prod-url').value.trim();
   const is_active = document.getElementById('edit-prod-active').checked;
   try {
     const res = await fetch('/api/products?action=update', {
       method: 'POST', headers: mgrHeaders(),
-      body: JSON.stringify({ id: editProdId, name, image_url, product_url, is_active }),
+      body: JSON.stringify({ id: editProdId, name, category, image_url, product_url, is_active }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error);

@@ -2,8 +2,8 @@
 // api/products.js — 产品图册
 //
 // GET  /api/products                    → 列出上架产品（staff 或 manager token 均可）
-// POST /api/products?action=add         → 新增 { name, image_url, product_url }（Manager only）
-// POST /api/products?action=update      → 编辑 { id, name, image_url, product_url, is_active, sort_order }（Manager only）
+// POST /api/products?action=add         → 新增 { name, category, image_url, product_url }（Manager only）
+// POST /api/products?action=update      → 编辑 { id, name, category, image_url, product_url, is_active, sort_order }（Manager only）
 // POST /api/products?action=delete      → 删除 { id }（Manager only）
 
 const { createClient } = require('@supabase/supabase-js');
@@ -30,7 +30,8 @@ module.exports = async (req, res) => {
     if (!isStaff && !mgr) return res.status(401).json({ error: '未授权' });
 
     let q = db.from('products')
-      .select('id, name, image_url, product_url, sort_order, is_active')
+      .select('id, name, category, image_url, product_url, sort_order, is_active')
+      .order('category', { nullsFirst: true })
       .order('sort_order')
       .order('name');
     if (!mgr) q = q.eq('is_active', true);
@@ -47,11 +48,12 @@ module.exports = async (req, res) => {
   const { action } = req.query;
 
   if (req.method === 'POST' && action === 'add') {
-    const { name, image_url, product_url, sort_order } = req.body || {};
+    const { name, category, image_url, product_url, sort_order } = req.body || {};
     if (!name?.trim() || !image_url?.trim())
       return res.status(400).json({ error: '名字和图片链接必填' });
     const { data, error } = await db.from('products').insert({
       name: name.trim(),
+      category: category?.trim() || null,
       image_url: image_url.trim(),
       product_url: product_url?.trim() || null,
       sort_order: sort_order || 0,
@@ -61,10 +63,11 @@ module.exports = async (req, res) => {
   }
 
   if (req.method === 'POST' && action === 'update') {
-    const { id, name, image_url, product_url, sort_order, is_active } = req.body || {};
+    const { id, name, category, image_url, product_url, sort_order, is_active } = req.body || {};
     if (!id) return res.status(400).json({ error: '缺少 id' });
     const patch = {};
     if (name !== undefined) patch.name = name.trim();
+    if (category !== undefined) patch.category = category?.trim() || null;
     if (image_url !== undefined) patch.image_url = image_url.trim();
     if (product_url !== undefined) patch.product_url = product_url?.trim() || null;
     if (sort_order !== undefined) patch.sort_order = sort_order;

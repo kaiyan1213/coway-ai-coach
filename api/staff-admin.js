@@ -2,8 +2,8 @@
 // api/staff-admin.js — Staff 账号管理（Manager 专用）
 //
 // GET  /api/staff-admin                 → 列出 staff（按 manager team 权限过滤）
-// POST /api/staff-admin?action=add      → 新增 { name, pin, team }
-// POST /api/staff-admin?action=update   → 编辑/停用 { id, name, pin, team, is_active }
+// POST /api/staff-admin?action=add      → 新增 { name, pin, team, is_manager }
+// POST /api/staff-admin?action=update   → 编辑/停用 { id, name, pin, team, is_active, is_manager }
 // POST /api/staff-admin?action=delete   → 删除 { id }
 
 const { createClient } = require('@supabase/supabase-js');
@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
 
   // GET — 列出权限范围内的 staff
   if (req.method === 'GET') {
-    let q = db.from('staff').select('id, name, pin, team, is_active, created_at').order('name');
+    let q = db.from('staff').select('id, name, pin, team, is_active, is_manager, created_at').order('name');
     if (mgr.team) q = q.eq('team', mgr.team);
     const { data, error } = await q;
     if (error) return res.status(500).json({ error: '读取失败' });
@@ -31,7 +31,7 @@ module.exports = async (req, res) => {
 
   // POST add — 新增 staff
   if (req.method === 'POST' && action === 'add') {
-    const { name, pin, team } = req.body || {};
+    const { name, pin, team, is_manager } = req.body || {};
     if (!name?.trim() || !pin?.toString().trim())
       return res.status(400).json({ error: '姓名和 PIN 必填' });
 
@@ -39,7 +39,7 @@ module.exports = async (req, res) => {
     const finalTeam = mgr.team ? mgr.team : (team || null);
 
     const { data, error } = await db.from('staff')
-      .insert({ name: name.trim(), pin: String(pin).trim(), team: finalTeam })
+      .insert({ name: name.trim(), pin: String(pin).trim(), team: finalTeam, is_manager: !!is_manager })
       .select().single();
     if (error) return res.status(500).json({ error: error.message.includes('duplicate') ? '该姓名已存在' : '新增失败' });
     return res.status(201).json({ staff: data });
@@ -47,7 +47,7 @@ module.exports = async (req, res) => {
 
   // POST update — 编辑 / 停用
   if (req.method === 'POST' && action === 'update') {
-    const { id, name, pin, team, is_active } = req.body || {};
+    const { id, name, pin, team, is_active, is_manager } = req.body || {};
     if (!id) return res.status(400).json({ error: '缺少 id' });
 
     const { data: target } = await db.from('staff').select('team').eq('id', id).single();
@@ -58,6 +58,7 @@ module.exports = async (req, res) => {
     if (name !== undefined) patch.name = name.trim();
     if (pin !== undefined) patch.pin = String(pin).trim();
     if (is_active !== undefined) patch.is_active = !!is_active;
+    if (is_manager !== undefined) patch.is_manager = !!is_manager;
     // team-scoped manager 不能把员工挪去别的 team
     if (team !== undefined) patch.team = mgr.team ? mgr.team : (team || null);
 
