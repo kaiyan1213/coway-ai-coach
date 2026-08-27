@@ -54,7 +54,7 @@ module.exports = async (req, res) => {
     const showResolved = req.query.resolved === '1';
 
     let q = db.from('ai_feedback').select('*').order('created_at', { ascending: false });
-    if (!showResolved) q = q.eq('resolved', false);
+    q = q.eq('resolved', showResolved);
     if (mgr.team) q = q.eq('team', mgr.team); // team 为 null 的 manager 看全部
 
     const { data, error } = await q;
