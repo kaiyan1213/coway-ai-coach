@@ -32,10 +32,10 @@
 
     /* ── Dashboard ── */
     #view-dash{display:none;flex-direction:column;min-height:100vh}
-    .dash-header{background:var(--card);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.04)}
-    .dash-header img{height:24px;object-fit:contain}
-    .dash-header-right{display:flex;align-items:center;gap:10px}
-    .mgr-badge{font-size:12px;font-weight:700;color:var(--p-tx);background:var(--p-bg);padding:4px 10px;border-radius:12px}
+    .dash-header{background:var(--card);padding:12px 16px;display:flex;align-items:flex-end;justify-content:space-between;border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+    .dash-wordmark{font-size:11px;font-weight:800;color:var(--p);letter-spacing:.6px;text-transform:uppercase}
+    .dash-greeting{font-size:12px;color:var(--sub);font-weight:600;margin-top:4px}
+    .mgr-badge{font-size:18px;color:var(--text);font-weight:800;margin-top:1px;display:block}
     .btn-logout{background:var(--surf);border:1.5px solid var(--bdr);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--sub)}
     .dash-tabs{display:flex;gap:0;background:var(--card);border-bottom:1px solid var(--bdr);padding:0 16px;overflow-x:auto}
     .dash-tab{padding:12px 16px;font-size:14px;font-weight:600;color:var(--sub);border:none;background:none;border-bottom:2.5px solid transparent;transition:all .15s;white-space:nowrap}
@@ -127,11 +127,12 @@
 <!-- ─── Dashboard ─────────────────────────────────────────── -->
 <div id="view-dash">
   <div class="dash-header">
-    <img src="/coway-logo.png" alt="Coway">
-    <div class="dash-header-right">
+    <div>
+      <div class="dash-wordmark">coway manager</div>
+      <div class="dash-greeting" id="dash-greeting"></div>
       <span class="mgr-badge" id="mgr-badge"></span>
-      <button class="btn-logout" onclick="logout()">退出</button>
     </div>
+    <button class="btn-logout" onclick="logout()">退出</button>
   </div>
 
   <div class="dash-tabs">
@@ -352,7 +353,8 @@ function logout() {
 function showDash() {
   document.getElementById('view-login').style.display = 'none';
   document.getElementById('view-dash').style.display = 'flex';
-  document.getElementById('mgr-badge').textContent = MGR_NAME + (MGR_TEAM ? ` · ${MGR_TEAM}` : ' · 全部Team');
+  document.getElementById('dash-greeting').textContent = greetingText() + (MGR_TEAM ? ` · ${MGR_TEAM}` : ' · 全部Team');
+  document.getElementById('mgr-badge').textContent = MGR_NAME;
   const hint = document.getElementById('team-scope-hint');
   if (MGR_TEAM) {
     document.getElementById('new-staff-team').value = MGR_TEAM;
@@ -911,6 +913,14 @@ async function deleteKb(id) {
   } catch (e) { alert(e.message || '删除失败'); }
 }
 
+function greetingText() {
+  const h = new Date().getHours();
+  if (h < 5)  return '夜深了';
+  if (h < 12) return '早上好';
+  if (h < 14) return '中午好';
+  if (h < 18) return '下午好';
+  return '晚上好';
+}
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 }
