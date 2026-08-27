@@ -5,6 +5,7 @@
 //
 // GET  /api/knowledge                    → 列出所有知识条目
 // POST /api/knowledge?action=add         → 新增一条知识
+// POST /api/knowledge?action=update      → 编辑一条知识 { id, category, product, topic, content, keywords }
 // POST /api/knowledge?action=delete      → 删除一条知识 { id }
 // POST /api/knowledge?action=toggle      → 启用/停用一条知识 { id, is_active }
 
@@ -58,6 +59,29 @@ module.exports = async (req, res) => {
       .single();
     if (error) return res.status(500).json({ error: '新增失败' });
     return res.status(201).json({ entry: data });
+  }
+
+  // POST update — 编辑知识条目
+  if (req.method === 'POST' && action === 'update') {
+    const { id, category, product, topic, content, keywords } = req.body || {};
+    if (!id) return res.status(400).json({ error: '缺少 id' });
+    if (category && !ALLOWED_CATEGORIES.includes(category)) {
+      return res.status(400).json({ error: '无效 category' });
+    }
+    const patch = { updated_at: new Date().toISOString() };
+    if (category !== undefined) patch.category = category;
+    if (product !== undefined) patch.product = product || null;
+    if (topic !== undefined) patch.topic = topic;
+    if (content !== undefined) patch.content = content;
+    if (keywords !== undefined) patch.keywords = keywords || null;
+    const { data, error } = await db
+      .from('knowledge_base')
+      .update(patch)
+      .eq('id', id)
+      .select()
+      .single();
+    if (error) return res.status(500).json({ error: '更新失败' });
+    return res.status(200).json({ entry: data });
   }
 
   // POST delete — 删除

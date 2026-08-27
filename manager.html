@@ -144,6 +144,7 @@
     <button class="dash-tab"        id="tab-account"  onclick="switchTab('account')">账号</button>
     <button class="dash-tab"        id="tab-products" onclick="switchTab('products')">产品</button>
     <button class="dash-tab"        id="tab-promo"    onclick="switchTab('promo')">促销</button>
+    <button class="dash-tab"        id="tab-kb"       onclick="switchTab('kb')">知识库</button>
   </div>
 
   <div class="dash-body">
@@ -209,6 +210,53 @@
         <button class="btn-primary" onclick="addPromo()">新增</button>
       </div>
       <div id="promo-list"></div>
+    </div>
+
+    <!-- Knowledge base tab -->
+    <div id="panel-kb" style="display:none">
+      <div class="form-card">
+        <div class="form-title">➕ 新增知识条目</div>
+        <div class="form-row">
+          <select id="new-kb-category" class="form-input"></select>
+          <input id="new-kb-product" class="form-input" placeholder="产品名字（选填）">
+        </div>
+        <div class="form-row">
+          <input id="new-kb-topic" class="form-input" placeholder="标题">
+        </div>
+        <div class="form-row">
+          <textarea id="new-kb-content" class="form-input" rows="5" style="resize:vertical;font-family:inherit" placeholder="内容"></textarea>
+        </div>
+        <div class="form-row">
+          <input id="new-kb-keywords" class="form-input" placeholder="搜索关键词（选填，用逗号分开）">
+        </div>
+        <button class="btn-primary" onclick="addKb()">新增</button>
+      </div>
+      <div class="form-row" style="margin-bottom:14px">
+        <input id="kb-search" class="form-input" placeholder="搜索标题/内容/产品..." oninput="renderKb()">
+        <select id="kb-filter-category" class="form-input" style="flex:0 0 auto;min-width:140px" onchange="renderKb()"></select>
+      </div>
+      <div id="kb-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── Edit knowledge sheet ──────────────────────────────── -->
+<div class="edit-mask" id="edit-kb-mask" onclick="closeEditKb(event)">
+  <div class="edit-sheet">
+    <div class="edit-title">编辑知识条目</div>
+    <div class="lbl">分类</div>
+    <select id="edit-kb-category" class="form-input login-input" style="margin-bottom:10px"></select>
+    <div class="lbl">产品名字（选填）</div>
+    <input id="edit-kb-product" class="form-input login-input" style="margin-bottom:10px">
+    <div class="lbl">标题</div>
+    <input id="edit-kb-topic" class="form-input login-input" style="margin-bottom:10px">
+    <div class="lbl">内容</div>
+    <textarea id="edit-kb-content" class="form-input login-input" rows="6" style="resize:vertical;font-family:inherit;margin-bottom:10px"></textarea>
+    <div class="lbl">搜索关键词（选填）</div>
+    <input id="edit-kb-keywords" class="form-input login-input" style="margin-bottom:0">
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="closeEditKb()">取消</button>
+      <button class="btn-save" onclick="saveKb()">保存</button>
     </div>
   </div>
 </div>
@@ -326,17 +374,19 @@ function mgrHeaders() {
 // ── Tab ───────────────────────────────────────────────────────
 function switchTab(tab) {
   currentTab = tab;
-  ['pending','resolved','account','products','promo'].forEach(t =>
+  ['pending','resolved','account','products','promo','kb'].forEach(t =>
     document.getElementById('tab-'+t).classList.toggle('active', t===tab));
   document.getElementById('panel-feedback').style.display = (tab==='pending'||tab==='resolved') ? '' : 'none';
   document.getElementById('panel-account').style.display  = tab==='account'  ? '' : 'none';
   document.getElementById('panel-products').style.display = tab==='products' ? '' : 'none';
   document.getElementById('panel-promo').style.display    = tab==='promo'    ? '' : 'none';
+  document.getElementById('panel-kb').style.display       = tab==='kb'       ? '' : 'none';
 
   if (tab === 'pending' || tab === 'resolved') loadFeedback(tab);
   if (tab === 'account') loadStaff();
   if (tab === 'products') loadProducts();
   if (tab === 'promo') loadPromos();
+  if (tab === 'kb') loadKb();
 }
 
 // ── Load feedback ─────────────────────────────────────────────
@@ -670,6 +720,140 @@ async function deletePromo(id) {
   } catch (e) { alert(e.message || '删除失败'); }
 }
 
+// ── Knowledge base management ───────────────────────────────
+const KB_CATEGORIES = ['价格_Pricelist', 'Promotion_Memo', '产品知识', '话术FAQ', 'Flow内容', '下单后_流程', '销售话术', '下单前_产品', '下单前_安装'];
+let kbCache = [];
+let editKbId = null;
+
+function populateKbCategorySelects() {
+  const opts = KB_CATEGORIES.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  document.getElementById('new-kb-category').innerHTML = opts;
+  document.getElementById('edit-kb-category').innerHTML = opts;
+  document.getElementById('kb-filter-category').innerHTML = `<option value="">全部分类</option>` + opts;
+}
+
+async function loadKb() {
+  const el = document.getElementById('kb-list');
+  try {
+    const res = await fetch('/api/knowledge', { headers: mgrHeaders() });
+    const data = await res.json();
+    kbCache = data.knowledge || [];
+    renderKb();
+  } catch {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div>加载失败，请刷新</div></div>`;
+  }
+}
+
+function renderKb() {
+  const el = document.getElementById('kb-list');
+  const q = document.getElementById('kb-search').value.trim().toLowerCase();
+  const cat = document.getElementById('kb-filter-category').value;
+  const list = kbCache.filter(k => {
+    if (cat && k.category !== cat) return false;
+    if (!q) return true;
+    return [k.topic, k.content, k.product].some(v => (v||'').toLowerCase().includes(q));
+  });
+  if (!list.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">📚</div><div class="empty-title">没有找到知识条目</div></div>`;
+    return;
+  }
+  el.innerHTML = list.map(k => `
+    <div class="fb-card ${k.is_active?'':'resolved'}">
+      <div class="fb-meta">
+        <span class="fb-staff">${esc(k.topic)}</span>
+        <span class="fb-time">${fmtDate(k.updated_at)}</span>
+      </div>
+      <div class="fb-customer">${esc(k.category)}${k.product ? ' · '+esc(k.product) : ''}</div>
+      <div class="fb-response" style="max-height:none">${esc(k.content)}</div>
+      <div class="staff-actions">
+        <button class="icon-btn" onclick="openEditKb('${k.id}')">✏️ 编辑</button>
+        <button class="icon-btn" onclick="toggleKb('${k.id}', ${!k.is_active})">${k.is_active ? '⏸ 停用' : '▶ 启用'}</button>
+        <button class="icon-btn danger" onclick="deleteKb('${k.id}')">🗑️ 删除</button>
+      </div>
+    </div>`).join('');
+}
+
+async function addKb() {
+  const category = document.getElementById('new-kb-category').value;
+  const product = document.getElementById('new-kb-product').value.trim();
+  const topic = document.getElementById('new-kb-topic').value.trim();
+  const content = document.getElementById('new-kb-content').value.trim();
+  const keywords = document.getElementById('new-kb-keywords').value.trim();
+  if (!topic || !content) { alert('请填写标题和内容'); return; }
+  if (!confirm(`确认新增这条知识吗？\n\n【${category}】${topic}`)) return;
+  try {
+    const res = await fetch('/api/knowledge?action=add', {
+      method: 'POST', headers: mgrHeaders(),
+      body: JSON.stringify({ category, product, topic, content, keywords }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('new-kb-product').value = '';
+    document.getElementById('new-kb-topic').value = '';
+    document.getElementById('new-kb-content').value = '';
+    document.getElementById('new-kb-keywords').value = '';
+    loadKb();
+  } catch (e) { alert(e.message || '新增失败'); }
+}
+
+function openEditKb(id) {
+  const k = kbCache.find(x => x.id === id);
+  if (!k) return;
+  editKbId = id;
+  document.getElementById('edit-kb-category').value = k.category;
+  document.getElementById('edit-kb-product').value = k.product || '';
+  document.getElementById('edit-kb-topic').value = k.topic;
+  document.getElementById('edit-kb-content').value = k.content;
+  document.getElementById('edit-kb-keywords').value = k.keywords || '';
+  document.getElementById('edit-kb-mask').classList.add('open');
+}
+function closeEditKb(e) {
+  if (!e || e.target === document.getElementById('edit-kb-mask'))
+    document.getElementById('edit-kb-mask').classList.remove('open');
+}
+async function saveKb() {
+  const category = document.getElementById('edit-kb-category').value;
+  const product = document.getElementById('edit-kb-product').value.trim();
+  const topic = document.getElementById('edit-kb-topic').value.trim();
+  const content = document.getElementById('edit-kb-content').value.trim();
+  const keywords = document.getElementById('edit-kb-keywords').value.trim();
+  if (!topic || !content) { alert('请填写标题和内容'); return; }
+  if (!confirm(`确认保存这条修改吗？AI 之后会直接用这个新内容回答顾客。\n\n【${category}】${topic}`)) return;
+  try {
+    const res = await fetch('/api/knowledge?action=update', {
+      method: 'POST', headers: mgrHeaders(),
+      body: JSON.stringify({ id: editKbId, category, product, topic, content, keywords }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    closeEditKb();
+    loadKb();
+  } catch (e) { alert(e.message || '保存失败'); }
+}
+
+async function toggleKb(id, is_active) {
+  try {
+    const res = await fetch('/api/knowledge?action=toggle', {
+      method: 'POST', headers: mgrHeaders(), body: JSON.stringify({ id, is_active }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    loadKb();
+  } catch (e) { alert(e.message || '操作失败'); }
+}
+
+async function deleteKb(id) {
+  if (!confirm('删除这条知识？删除后 AI 就不会再用到它了。')) return;
+  try {
+    const res = await fetch('/api/knowledge?action=delete', {
+      method: 'POST', headers: mgrHeaders(), body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    loadKb();
+  } catch (e) { alert(e.message || '删除失败'); }
+}
+
 function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
 }
@@ -682,6 +866,7 @@ function fmtDate(iso) {
 // ── Init ──────────────────────────────────────────────────────
 document.getElementById('pwd').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
 loadManagerNames();
+populateKbCategorySelects();
 const saved = sessionStorage.getItem('mgr_session');
 if (saved) {
   try {
