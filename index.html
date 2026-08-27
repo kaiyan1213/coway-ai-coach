@@ -325,6 +325,15 @@
     .thread-menu-item{display:block;width:100%;padding:13px 18px;font-size:14px;text-align:left;background:none;border:none;cursor:pointer;font-weight:500;transition:background .1s}
     .thread-menu-item:active{background:var(--surf)}
     .thread-menu-item.danger{color:var(--r)}
+    .list-menu{min-width:190px;padding:6px}
+    .list-menu-item{
+      display:flex;align-items:center;gap:11px;width:100%;
+      padding:12px 12px;border-radius:12px;font-size:14px;font-weight:600;
+      text-align:left;background:none;border:none;cursor:pointer;color:var(--text);
+      transition:background .1s;
+    }
+    .list-menu-item:active{background:var(--surf)}
+    .list-menu-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
 
     /* ── Report error button ── */
     .btn-report{background:none;border:none;color:var(--sub);font-size:12px;padding:4px 0;font-weight:500;opacity:.7;display:flex;align-items:center;gap:4px;margin-top:6px}
@@ -393,23 +402,29 @@
 <div id="view-list" class="view" style="height:100dvh;height:100vh;overflow:hidden">
   <div class="list-header">
     <div class="list-header-top">
-      <div>
+      <div class="thread-menu-wrap">
+        <button class="btn-hamburger" onclick="toggleListMenu(event)"><span></span><span></span><span></span></button>
+        <div class="thread-menu list-menu" id="list-menu" style="display:none;left:0;right:auto">
+          <button class="list-menu-item" id="qa-manager" onclick="location.href='/manager.html'" style="display:none">
+            <span class="list-menu-dot" style="background:#7C3AED"></span>Manager 后台
+          </button>
+          <button class="list-menu-item" onclick="openProductsModal()">
+            <span class="list-menu-dot" style="background:#0891B2"></span>产品图册
+          </button>
+          <button class="list-menu-item" onclick="openTrashModal()">
+            <span class="list-menu-dot" style="background:#65A30D"></span>回收站
+          </button>
+          <button class="list-menu-item" onclick="confirmLogout()">
+            <span class="list-menu-dot" style="background:#DB2777"></span>退出登录
+          </button>
+        </div>
+      </div>
+      <div style="flex:1;min-width:0;margin:0 12px">
         <div class="list-wordmark">coway</div>
         <div class="list-greeting" id="list-greeting"></div>
         <div class="list-staff" id="list-staff-name"></div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
-        <div class="thread-menu-wrap">
-          <button class="btn-hamburger" onclick="toggleListMenu(event)"><span></span><span></span><span></span></button>
-          <div class="thread-menu" id="list-menu" style="display:none">
-            <button class="thread-menu-item" id="qa-manager" onclick="location.href='/manager.html'" style="display:none">Manager 后台</button>
-            <button class="thread-menu-item" onclick="openProductsModal()">产品图册</button>
-            <button class="thread-menu-item" onclick="openTrashModal()">回收站</button>
-            <button class="thread-menu-item" onclick="confirmLogout()">退出登录</button>
-          </div>
-        </div>
-        <button class="btn-new" onclick="openNewCustomerModal()">+ 新客户</button>
-      </div>
+      <button class="btn-new" onclick="openNewCustomerModal()">+ 新客户</button>
     </div>
     <div class="filter-bar">
       <button class="filter-btn active" data-filter="all"   onclick="setFilter('all')">全部</button>
