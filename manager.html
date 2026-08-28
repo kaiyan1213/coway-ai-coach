@@ -848,20 +848,33 @@ function renderKb() {
     el.innerHTML = `<div class="empty-state"><div class="empty-icon">📚</div><div class="empty-title">没有找到知识条目</div></div>`;
     return;
   }
-  el.innerHTML = list.map(k => `
+
+  const grouped = {};
+  list.forEach(k => (grouped[k.category] = grouped[k.category] || []).push(k));
+  const catNames = Object.keys(grouped).sort((a, b) => {
+    const ia = KB_CATEGORIES.indexOf(a), ib = KB_CATEGORIES.indexOf(b);
+    if (ia === -1 && ib === -1) return a.localeCompare(b);
+    if (ia === -1) return 1;
+    if (ib === -1) return -1;
+    return ia - ib;
+  });
+
+  el.innerHTML = catNames.map(catName => `
+    <div class="form-title" style="margin:16px 0 10px">${esc(catName)} <span style="color:var(--sub);font-weight:400">(${grouped[catName].length})</span></div>
+    ${grouped[catName].map(k => `
     <div class="fb-card ${k.is_active?'':'resolved'}">
       <div class="fb-meta">
         <span class="fb-staff">${esc(k.topic)}</span>
         <span class="fb-time">${fmtDate(k.updated_at)}</span>
       </div>
-      <div class="fb-customer">${esc(k.category)}${k.product ? ' · '+esc(k.product) : ''}</div>
+      ${k.product ? `<div class="fb-customer">${esc(k.product)}</div>` : ''}
       <div class="fb-response" style="max-height:none">${esc(k.content)}</div>
       <div class="staff-actions">
         <button class="icon-btn" onclick="openEditKb('${k.id}')">✏️ 编辑</button>
         <button class="icon-btn" onclick="toggleKb('${k.id}', ${!k.is_active})">${k.is_active ? '⏸ 停用' : '▶ 启用'}</button>
         <button class="icon-btn danger" onclick="deleteKb('${k.id}')">🗑️ 删除</button>
       </div>
-    </div>`).join('');
+    </div>`).join('')}`).join('');
 }
 
 async function addKb() {
