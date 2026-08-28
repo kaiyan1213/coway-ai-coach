@@ -677,7 +677,10 @@ async function loadStaffDropdown() {
     const data = await api('/api/auth');
     const sel = document.getElementById('login-name');
     sel.innerHTML = '<option value="">-- 选择你的名字 --</option>';
-    (data.staff||[]).forEach(s => {
+    const sorted = [...(data.staff||[])].sort((a, b) =>
+      (b.is_manager?1:0) - (a.is_manager?1:0) || a.name.localeCompare(b.name)
+    );
+    sorted.forEach(s => {
       const opt = document.createElement('option');
       opt.value = s.name;
       opt.textContent = s.name + (s.is_manager ? '（Manager）' : '（Staff）');
