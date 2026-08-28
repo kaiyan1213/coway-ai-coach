@@ -871,10 +871,7 @@ function renderHistory() {
     <div class="history-item" style="animation-delay:${Math.min(idx,6)*30}ms">
       <div class="history-time">${formatDate(i.created_at)}</div>
       <div class="bubble-row bubble-row-user">
-        <div class="bubble bubble-user">
-          <div class="bubble-label" style="color:rgba(255,255,255,.85)">${isQA?'问答':'截图分析'}</div>
-          ${esc(question)}
-        </div>
+        <div class="bubble bubble-user"><div class="bubble-label" style="color:rgba(255,255,255,.85)">${isQA?'问答':'截图分析'}</div>${esc(question)}</div>
       </div>
       <div class="bubble-row bubble-row-ai">
         <div class="bubble bubble-ai">${esc(i.ai_suggestion)}</div>
